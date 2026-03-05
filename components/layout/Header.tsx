@@ -30,8 +30,8 @@ function NavPill({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link href={item.href} className="relative">
       <motion.div
-        whileHover={{ y: -1 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+  whileHover={{ y: -3, scale: 1.03 }}
+  transition={{ type: "spring", stiffness: 520, damping: 18 }}
         className={[
           "group inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold",
           "transition shadow-sm",

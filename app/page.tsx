@@ -1,53 +1,50 @@
-﻿import { supabase } from "@/lib/supabase/client";
-import CreatorCard from "@/components/creators/CreatorCard";
+﻿import Link from "next/link";
+import ProfilesGrid from "@/components/explore/ProfilesGrid";
 
-export default async function HomePage() {
-  const { data, error } = await supabase
-    .from("creators")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return (
-      <div className="p-6 text-red-600">
-        Errore Supabase: {error.message}
-      </div>
-    );
-  }
-
+export default function HomePage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-5xl font-semibold tracking-tight">
-          Profili del momento
-        </h1>
-        <p className="mt-2 text-slate-600">
-          Social reputazionale privato. Pulito, discreto, premium.
+    <div className="space-y-10">
+      {/* HERO */}
+      <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">Lume</h1>
+
+        <p className="mt-4 text-slate-600 max-w-2xl leading-relaxed">
+          Private Reputation Network. Profili, reputazione e trasparenza. Naviga,
+          confronta e scopri i profili in modo semplice.
         </p>
+
+        <div className="mt-8 flex flex-col sm:flex-row gap-3">
+          <Link
+            href="/explore"
+            className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-4 font-semibold text-white shadow-sm hover:opacity-95"
+          >
+            Vai a Esplora
+          </Link>
+
+          <Link
+            href="/reputation"
+            className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-4 font-semibold text-slate-900 hover:bg-slate-50"
+          >
+            Come funziona la reputazione
+          </Link>
+        </div>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {data?.map((creator) => (
-          <CreatorCard
-            key={creator.id}
-            model={{
-              id: creator.id,
-              name: creator.display_name,
-              age: creator.age,
-              city: creator.city,
-              rating: 4.5, // temporaneo finché non creiamo tabella reviews
-              reviewsCount: 0,
-              bio: creator.bio,
-              tags: creator.tags ?? [],
-              imageUrl: creator.avatar_url,
-              badges: [
-                ...(creator.is_verified ? ["verified"] : []),
-                ...(creator.tier === "elite" ? ["elite"] : []),
-              ],
-            }}
-          />
-        ))}
+      {/* PROFILI SUBITO (più coinvolgente) */}
+      <ProfilesGrid
+        title="Profili del momento"
+        subtitle="Selezione rapida: entra, scorri e apri i profili."
+        limit={9}
+      />
+
+      {/* CTA finale piccola */}
+      <div className="flex justify-center">
+        <Link
+          href="/explore"
+          className="text-sm font-semibold text-slate-700 underline hover:text-slate-900"
+        >
+          Vedi tutti i profili →
+        </Link>
       </div>
     </div>
   );
