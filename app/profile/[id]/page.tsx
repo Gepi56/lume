@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import ProfileGallery from "@/components/profile/ProfileGallery";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -38,7 +39,7 @@ function StarRow({ value }: { value: number }) {
 }
 
 export default async function ProfilePage({ params }: PageProps) {
-  // ✅ IMPORTANTISSIMO: in questa versione di Next params è una Promise
+  // ✅ IMPORTANTISSIMO: params è Promise
   const { id } = await params;
 
   if (!id) {
@@ -112,42 +113,41 @@ export default async function ProfilePage({ params }: PageProps) {
       : null;
 
   const tags: string[] = Array.isArray(creator.tags) ? creator.tags : [];
-
   const isVerified = !!creator.is_verified;
   const tier = (creator.tier as string | null) ?? null;
   const isElite = tier === "elite";
 
+  // ✅ Gallery: prima foto = avatar, poi eventuali gallery_urls
+  const galleryUrls: string[] = Array.isArray(creator.gallery_urls) ? creator.gallery_urls : [];
+  const images = [creator.avatar_url || "", ...galleryUrls];
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-        {/* IMMAGINE */}
-        <div className="rounded-[28px] overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={creator.avatar_url || ""}
-              alt={creator.display_name || "Profilo"}
-              className="w-full h-[520px] object-cover"
-            />
+      <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 items-start">
+        {/* LEFT: GALLERY */}
+        <div className="relative">
+          <ProfileGallery
+            images={images}
+            name={creator.display_name || "Profilo"}
+          />
 
-            {/* Badge sopra immagine */}
-            <div className="absolute top-4 left-4 flex gap-2">
-              {isVerified && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-sm text-emerald-700">
-                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                  Verificata
-                </span>
-              )}
-              {isElite && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-sm text-amber-800">
-                  👑 Elite
-                </span>
-              )}
-            </div>
+          {/* Badge sopra la gallery */}
+          <div className="absolute top-4 left-4 flex gap-2">
+            {isVerified && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-sm text-emerald-700">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                Verificata
+              </span>
+            )}
+            {isElite && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-sm text-amber-800">
+                👑 Elite
+              </span>
+            )}
           </div>
         </div>
 
-        {/* DETTAGLI */}
+        {/* RIGHT: DETTAGLI */}
         <div>
           <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
             {creator.display_name}
@@ -179,7 +179,7 @@ export default async function ProfilePage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Sezioni */}
+          {/* Chi sono */}
           <div className="mt-7">
             <div className="text-lg font-semibold text-slate-900">Chi sono</div>
             <p className="mt-2 text-slate-700 leading-relaxed">
@@ -187,6 +187,7 @@ export default async function ProfilePage({ params }: PageProps) {
             </p>
           </div>
 
+          {/* Interessi */}
           <div className="mt-6">
             <div className="text-lg font-semibold text-slate-900">Interessi</div>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -265,7 +266,7 @@ export default async function ProfilePage({ params }: PageProps) {
           </div>
 
           <div className="mt-8">
-            <Link href="/" className="text-sm underline text-slate-600">
+            <Link href="/explore" className="text-sm underline text-slate-600">
               ← Torna ai profili
             </Link>
           </div>
