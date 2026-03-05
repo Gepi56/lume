@@ -2,7 +2,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 
 type PageProps = {
-  params: Promise<{ id: string }>;
+  params: { id?: string };
 };
 
 type ReviewRow = {
@@ -38,26 +38,22 @@ function StarRow({ value }: { value: number }) {
 }
 
 export default async function ProfilePage({ params }: PageProps) {
-  // ✅ IMPORTANTISSIMO: in questa versione di Next params è una Promise
-  const { id } = await params;
+  const id = params?.id;
 
+  // Se apri /profile senza id, qui è normale che sia vuoto.
   if (!id) {
-    return (
-      <div className="max-w-5xl mx-auto p-6">
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-          <div className="font-semibold">ERRORE ROUTE: params.id è vuoto</div>
-          <div className="text-sm mt-1">
-            Stai aprendo <span className="font-mono">/profile</span> senza id.
-          </div>
-          <div className="mt-3">
-            <Link href="/" className="text-sm underline">
-              Torna alla home
-            </Link>
-          </div>
-        </div>
+  return (
+    <div className="max-w-5xl mx-auto p-6">
+
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+        ERRORE ROUTE: params.id è vuoto
       </div>
-    );
-  }
+
+      <pre>{JSON.stringify({ params }, null, 2)}</pre>
+
+    </div>
+  );
+}
 
   // 1) Creator
   const { data: creator, error: creatorError } = await supabase
@@ -111,10 +107,11 @@ export default async function ProfilePage({ params }: PageProps) {
       ? safeReviews.reduce((acc, r) => acc + (r.rating ?? 0), 0) / reviewsCount
       : null;
 
+  // tags: in tabella li hai come array Postgres -> Supabase te li porta come array JS
   const tags: string[] = Array.isArray(creator.tags) ? creator.tags : [];
 
   const isVerified = !!creator.is_verified;
-  const tier = (creator.tier as string | null) ?? null;
+  const tier = creator.tier as string | null; // es: "free" | "elite"
   const isElite = tier === "elite";
 
   return (
@@ -123,7 +120,6 @@ export default async function ProfilePage({ params }: PageProps) {
         {/* IMMAGINE */}
         <div className="rounded-[28px] overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
           <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={creator.avatar_url || ""}
               alt={creator.display_name || "Profilo"}
@@ -164,7 +160,9 @@ export default async function ProfilePage({ params }: PageProps) {
                 <div className="text-sm text-slate-700">
                   {avg ? (
                     <>
-                      <span className="font-semibold">{avg.toFixed(1)}</span>{" "}
+                      <span className="font-semibold">
+                        {avg.toFixed(1)}
+                      </span>{" "}
                       <span className="text-slate-500">
                         ({reviewsCount} recensioni)
                       </span>
@@ -191,7 +189,7 @@ export default async function ProfilePage({ params }: PageProps) {
             <div className="text-lg font-semibold text-slate-900">Interessi</div>
             <div className="mt-3 flex flex-wrap gap-2">
               {tags.length ? (
-                tags.map((t: string) => (
+                tags.map((t) => (
                   <span
                     key={t}
                     className="rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-sm text-slate-700"
@@ -200,9 +198,7 @@ export default async function ProfilePage({ params }: PageProps) {
                   </span>
                 ))
               ) : (
-                <span className="text-sm text-slate-500">
-                  Nessun interesse indicato.
-                </span>
+                <span className="text-sm text-slate-500">Nessun interesse indicato.</span>
               )}
             </div>
           </div>
@@ -219,9 +215,7 @@ export default async function ProfilePage({ params }: PageProps) {
 
           {/* Recensioni */}
           <div className="mt-8">
-            <div className="text-lg font-semibold text-slate-900">
-              Recensioni
-            </div>
+            <div className="text-lg font-semibold text-slate-900">Recensioni</div>
 
             {safeReviews.length === 0 ? (
               <div className="mt-3 text-sm text-slate-500">
@@ -262,12 +256,6 @@ export default async function ProfilePage({ params }: PageProps) {
                 ))}
               </div>
             )}
-          </div>
-
-          <div className="mt-8">
-            <Link href="/" className="text-sm underline text-slate-600">
-              ← Torna ai profili
-            </Link>
           </div>
         </div>
       </div>
