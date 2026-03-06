@@ -210,13 +210,19 @@ export default async function ProfilePage({ params }: PageProps) {
 
           {/* CTA Chat */}
           <div className="mt-7">
-            <button className="w-full rounded-full bg-slate-900 text-white py-4 font-semibold shadow-sm hover:opacity-95 active:opacity-90 transition">
-              Chatta (demo)
-            </button>
-            <div className="mt-2 text-xs text-slate-500">
-              Demo UI: la chat reale la colleghiamo dopo (step successivo).
-            </div>
-          </div>
+  <Link
+    href={`/chat/demo?creator=${encodeURIComponent(
+      creator.display_name || "profilo"
+    )}`}
+    className="block w-full rounded-full bg-slate-900 py-4 text-center font-semibold text-white shadow-sm transition hover:opacity-95 active:opacity-90"
+  >
+    Chatta (demo)
+  </Link>
+
+  <div className="mt-2 text-xs text-slate-500">
+    Demo UI: la chat reale la colleghiamo dopo (step successivo).
+  </div>
+</div>
 
           {/* Recensioni */}
           <div className="mt-8">
