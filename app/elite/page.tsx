@@ -2,15 +2,10 @@ import { EliteBenefits } from "@/components/elite/EliteBenefits";
 import { EliteRequirements } from "@/components/elite/EliteRequirements";
 import { EliteFaq } from "@/components/elite/EliteFAQ";
 import { LumeStatusBanner } from "@/components/shared/LumeStatusBanner";
+import { getLumeFeaturedPublicData } from "@/lib/server/lume-public";
 
-import { eliteMock } from "@/lib/mock/elite";
-import { accountStatusMock } from "@/lib/mock/account-status";
-
-export default function ElitePage() {
-  const benefits = eliteMock?.benefits ?? [];
-  const requirements = eliteMock?.requirements ?? [];
-  const faq = eliteMock?.faq ?? [];
-  const actions = eliteMock?.actions ?? [];
+export default async function ElitePage() {
+  const data = await getLumeFeaturedPublicData();
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -25,26 +20,26 @@ export default function ElitePage() {
               Programma Elite
             </h1>
             <p className="max-w-3xl text-sm leading-6 text-zinc-400 sm:text-base">
-              Area dedicata ai profili con reputazione più solida, presenza costante
-              e standard qualitativi elevati. La pagina resta prudente, coerente con
-              il sito attuale e pronta per futuri collegamenti ai dati reali.
+              Pagina pubblica con criteri Elite basati su dati reali Supabase del
+              profilo più forte tra quelli attivi. Nessun redesign: solo lettura
+              reale del database e fallback prudenti.
             </p>
           </div>
         </section>
 
         <LumeStatusBanner
-          title="Stato Elite del profilo"
-          subtitle="Verifica rapidamente il livello attuale, il punteggio reputazionale e il prossimo traguardo utile per l’accesso o il consolidamento Elite."
-          status={accountStatusMock}
+          title={`Stato Elite: ${data.creatorName}`}
+          subtitle={`Valutazione reale del profilo in evidenza${data.creatorCity ? ` • ${data.creatorCity}` : ""}`}
+          status={data.accountStatus}
         />
 
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
           <div className="xl:col-span-2">
-            <EliteRequirements items={requirements} />
+            <EliteRequirements items={data.elite.requirements} />
           </div>
 
           <div className="xl:col-span-1">
-            <EliteBenefits items={benefits} />
+            <EliteBenefits items={data.elite.benefits} />
           </div>
         </div>
 
@@ -54,13 +49,13 @@ export default function ElitePage() {
               Azioni consigliate
             </h2>
             <p className="text-sm text-zinc-400">
-              Piccoli passaggi pratici per migliorare o consolidare lo stato Elite.
+              Passaggi concreti derivati dalla situazione reale del profilo attivo in evidenza.
             </p>
           </div>
 
           <div className="mt-4 space-y-3">
-            {actions.length > 0 ? (
-              actions.map((action, index) => (
+            {data.elite.actions.length > 0 ? (
+              data.elite.actions.map((action, index) => (
                 <div
                   key={`${action}-${index}`}
                   className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300"
@@ -79,7 +74,7 @@ export default function ElitePage() {
           </div>
         </section>
 
-        <EliteFaq items={faq} />
+        <EliteFaq items={data.elite.faq} />
       </div>
     </main>
   );
