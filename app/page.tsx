@@ -55,7 +55,7 @@ export default async function HomePage() {
             </div>
 
             <h1 className="mt-6 max-w-3xl text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
-              Profili, reputazione e connessioni
+              Profili, reputation e connessioni
               <br />
               in un ambiente più pulito
               <br />
@@ -64,7 +64,7 @@ export default async function HomePage() {
 
             <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600">
               Una piattaforma visivamente più ordinata per navigare i profili,
-              leggere recensioni e scoprire reputazione ed Elite.
+              leggere recensioni e scoprire reputation ed Elite.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -212,7 +212,7 @@ export default async function HomePage() {
             text="Ogni profilo viene mostrato in una struttura chiara: immagini, bio, interessi, badge e recensioni sono immediatamente leggibili."
           />
           <FeatureCard
-            title="Reputazione più visibile"
+            title="reputation più visibile"
             text="Il sistema valorizza rating, numero di recensioni e segnali reputazionali in modo semplice, senza sovraccaricare la navigazione."
           />
           <FeatureCard

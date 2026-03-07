@@ -70,7 +70,7 @@ export default async function RankingPage() {
         </h1>
 
         <p className="mt-2 text-slate-600">
-          Profili con la reputazione più alta sulla piattaforma.
+          Profili con la reputation più alta sulla piattaforma.
         </p>
       </div>
 

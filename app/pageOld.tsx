@@ -31,7 +31,7 @@ export default function HomePage() {
             </div>
 
             <h1 className="mt-6 max-w-3xl text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl lg:text-6xl">
-              Profili, reputazione e connessioni in un ambiente più pulito e discreto.
+              Profili, reputation e connessioni in un ambiente più pulito e discreto.
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 md:text-lg">
@@ -52,7 +52,7 @@ export default function HomePage() {
                 href="/reputation"
                 className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
               >
-                Come funziona la reputazione
+                Come funziona la reputation
               </Link>
             </div>
 
@@ -83,14 +83,14 @@ export default function HomePage() {
               </div>
               <div className="mt-4 text-sm leading-6 text-white/70">
                 Layout pulito, immagini protagoniste, badge reputazionali e
-                percorsi chiari tra profilo, classifica, reputazione ed Elite.
+                percorsi chiari tra profilo, classifica, reputation ed Elite.
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                  Reputazione
+                  reputation
                 </div>
                 <div className="mt-2 text-lg font-semibold text-slate-900">
                   Trasparente
@@ -173,7 +173,7 @@ export default function HomePage() {
             text="Ogni profilo viene mostrato in una struttura chiara: immagini, bio, interessi, badge e recensioni sono immediatamente leggibili."
           />
           <FeatureCard
-            title="Reputazione più visibile"
+            title="reputation più visibile"
             text="Il sistema valorizza rating, numero di recensioni e segnali reputazionali in modo semplice, senza sovraccaricare la navigazione."
           />
           <FeatureCard
@@ -253,7 +253,7 @@ export default function HomePage() {
               Entra in Lume e scopri i profili.
             </h2>
             <p className="mt-3 max-w-2xl text-slate-600">
-              Naviga tra i profili, consulta reputazione e recensioni, esplora
+              Naviga tra i profili, consulta reputation e recensioni, esplora
               il sistema Elite e prova l’esperienza visiva della piattaforma.
             </p>
           </div>

@@ -15,7 +15,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { href: "/explore", label: "Esplora", icon: <Search className="h-4 w-4" />, tone: "base" },
   { href: "/ranking", label: "Classifica", icon: <Trophy className="h-4 w-4" />, tone: "base" },
-  { href: "/reputation", label: "Reputazione", icon: <Sparkles className="h-4 w-4" />, tone: "base" },
+  { href: "/reputation", label: "reputation", icon: <Sparkles className="h-4 w-4" />, tone: "base" },
   { href: "/elite", label: "Elite", icon: <Crown className="h-4 w-4" />, tone: "elite" },
 ];
 
