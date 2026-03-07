@@ -1,151 +1,71 @@
-export type EliteBenefit = {
-  id: string;
+export type EliteRequirement = {
   title: string;
   description: string;
-  highlight: string;
+  target: string;
 };
 
-export type EliteRequirement = {
-  id: string;
-  label: string;
-  value: string;
-  ok: boolean;
+export type EliteBenefit = {
+  title: string;
+  description: string;
 };
 
-export type EliteProgressItem = {
-  id: string;
-  label: string;
-  current: number;
-  target: number;
-};
-
-export type EliteFAQItem = {
-  id: string;
+export type EliteFaqItem = {
   question: string;
   answer: string;
 };
 
 export type EliteData = {
-  statusLabel: string;
-  accessState: "active" | "locked" | "review";
-  currentScore: number;
-  targetScore: number;
-  summary: string;
-  badges: string[];
-  benefits: EliteBenefit[];
   requirements: EliteRequirement[];
-  progress: EliteProgressItem[];
-  faq: EliteFAQItem[];
+  benefits: EliteBenefit[];
+  faq: EliteFaqItem[];
+  actions: string[];
 };
 
 export const eliteMock: EliteData = {
-  statusLabel: "In valutazione avanzata",
-  accessState: "review",
-  currentScore: 86,
-  targetScore: 90,
-  summary:
-    "Elite rappresenta il livello premium reputazionale di Lume. Non è solo un badge estetico: segnala qualità costante, affidabilità elevata e una presenza che ispira maggiore fiducia.",
-  badges: ["Visibilità premium", "Fiducia aumentata", "Profilo evidenziato"],
-  benefits: [
-    {
-      id: "1",
-      title: "Maggiore evidenza nel sistema",
-      description:
-        "I profili Elite possono ottenere una visibilità più forte nelle aree strategiche della piattaforma, migliorando la percezione generale del profilo.",
-      highlight: "Posizionamento",
-    },
-    {
-      id: "2",
-      title: "Segnale di affidabilità superiore",
-      description:
-        "Il badge Elite comunica rapidamente un livello avanzato di continuità, qualità e reputazione, rafforzando la fiducia già al primo impatto.",
-      highlight: "Trust",
-    },
-    {
-      id: "3",
-      title: "Profilo più distintivo",
-      description:
-        "Colori, etichette e stato Elite rendono il profilo più riconoscibile rispetto agli altri, senza stravolgere l'esperienza utente della piattaforma.",
-      highlight: "Identità",
-    },
-    {
-      id: "4",
-      title: "Accesso a future funzioni premium",
-      description:
-        "La struttura è pronta per integrare in futuro vantaggi dedicati ai profili Elite, come placement mirati o priorità in alcune sezioni.",
-      highlight: "Espansione",
-    },
-  ],
   requirements: [
     {
-      id: "1",
-      label: "Punteggio reputazione minimo",
-      value: "Target richiesto: 90/100",
-      ok: false,
+      title: "Reputazione elevata",
+      description: "Mantenere un punteggio reputazionale stabile e credibile nel tempo.",
+      target: "90/100 o superiore",
     },
     {
-      id: "2",
-      label: "Profilo verificato",
-      value: "Verifica completata e mantenuta attiva",
-      ok: true,
+      title: "Qualità delle recensioni",
+      description: "Storico recensioni positivo, coerente e senza anomalie rilevanti.",
+      target: "Feedback prevalentemente positivi",
     },
     {
-      id: "3",
-      label: "Storico affidabile",
-      value: "Assenza di criticità recenti o segnalazioni rilevanti",
-      ok: true,
-    },
-    {
-      id: "4",
-      label: "Qualità costante nel tempo",
-      value: "Recensioni e andamento reputazionale stabili",
-      ok: true,
+      title: "Affidabilità operativa",
+      description: "Presenza costante, risposta regolare e assenza di criticità ripetute.",
+      target: "Costanza nel tempo",
     },
   ],
-  progress: [
+  benefits: [
     {
-      id: "1",
-      label: "Punteggio generale",
-      current: 86,
-      target: 90,
+      title: "Maggiore visibilità",
+      description: "Il livello Elite rafforza la percezione premium del profilo.",
     },
     {
-      id: "2",
-      label: "Affidabilità",
-      current: 91,
-      target: 90,
+      title: "Trust più alto",
+      description: "Un profilo Elite trasmette maggiore affidabilità agli utenti.",
     },
     {
-      id: "3",
-      label: "Qualità esperienza",
-      current: 92,
-      target: 90,
-    },
-    {
-      id: "4",
-      label: "Coinvolgimento",
-      current: 81,
-      target: 85,
+      title: "Posizionamento distintivo",
+      description: "Lo stato Elite aiuta a distinguersi all’interno dell’ecosistema Lume.",
     },
   ],
   faq: [
     {
-      id: "1",
-      question: "Il badge Elite si compra?",
-      answer:
-        "No. In questa struttura il livello Elite è pensato come risultato reputazionale e non come acquisto diretto. In futuro potrà convivere con logiche premium, ma senza sostituire il merito reputazionale.",
+      question: "L’accesso a Elite è automatico?",
+      answer: "Può dipendere da soglie reputazionali, qualità del profilo e criteri interni della piattaforma.",
     },
     {
-      id: "2",
       question: "Si può perdere lo stato Elite?",
-      answer:
-        "Sì. Se la qualità, l'affidabilità o la reputazione complessiva peggiorano in modo evidente, lo stato può essere rivisto o rimosso.",
+      answer: "Sì, se nel tempo calano reputazione, costanza o qualità percepita del profilo.",
     },
-    {
-      id: "3",
-      question: "A cosa serve questa pagina?",
-      answer:
-        "Serve a spiegare in modo chiaro il valore del livello Elite, i requisiti minimi e il progresso attuale, senza rendere il sistema confuso o opaco.",
-    },
+  ],
+  actions: [
+    "Mantieni alta la qualità delle recensioni e la costanza di risposta.",
+    "Consolida il punteggio reputazionale oltre la soglia obiettivo.",
+    "Evita periodi di inattività o comportamenti incoerenti con il livello premium.",
   ],
 };

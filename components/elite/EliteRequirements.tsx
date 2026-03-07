@@ -1,53 +1,73 @@
-type Requirement = {
-  id: string;
-  label: string;
-  value: string;
-  ok: boolean;
+type EliteRequirement = {
+  title: string;
+  description: string;
+  target?: string;
+  progress?: number;
 };
 
 type Props = {
-  requirements: Requirement[];
+  items?: EliteRequirement[];
+  requirements?: EliteRequirement[];
 };
 
-function cn(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
+export function EliteRequirements({ items, requirements }: Props) {
+  const safeRequirements = items ?? requirements ?? [];
 
-export function EliteRequirements({ requirements }: Props) {
   return (
     <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
-      <div className="mb-5 space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight">Criteri di accesso</h2>
+      <div className="mb-6 space-y-1">
+        <h2 className="text-xl font-semibold tracking-tight text-white">
+          Requisiti Elite
+        </h2>
         <p className="text-sm text-zinc-400">
-          Requisiti minimi per sbloccare o mantenere il livello Elite.
+          I criteri principali per accedere o mantenere il livello Elite.
         </p>
       </div>
 
-      <div className="space-y-3">
-        {requirements.map((item) => (
-          <div
-            key={item.id}
-            className="rounded-2xl border border-white/10 bg-black/20 p-4"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-white">{item.label}</p>
-                <p className="mt-1 text-sm text-zinc-400">{item.value}</p>
-              </div>
+      <div className="space-y-5">
+        {safeRequirements.length > 0 ? (
+          safeRequirements.map((requirement, index) => {
+            const progress = Math.min(Math.max(requirement.progress ?? 0, 0), 100);
+            const width = `${progress}%`;
 
-              <span
-                className={cn(
-                  "inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-                  item.ok
-                    ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/20"
-                    : "bg-zinc-500/15 text-zinc-300 ring-1 ring-zinc-500/20"
-                )}
+            return (
+              <div
+                key={`${requirement.title}-${index}`}
+                className="rounded-2xl border border-white/10 bg-black/20 p-4"
               >
-                {item.ok ? "OK" : "Da migliorare"}
-              </span>
-            </div>
+                <div className="mb-3 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">
+                      {requirement.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      {requirement.description}
+                    </p>
+                  </div>
+
+                  {requirement.target ? (
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-amber-300">
+                        {requirement.target}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400"
+                    style={{ width }}
+                  />
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-400">
+            Nessun requisito disponibile al momento.
           </div>
-        ))}
+        )}
       </div>
     </section>
   );
