@@ -9,9 +9,10 @@ export default async function ReputationPage() {
   const data = await getLumeFeaturedPublicData();
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+    <main className="relative min-h-screen bg-gradient-to-b from-[#16041a] via-[#06020a] to-black text-zinc-100">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(217,70,239,0.18),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.14),transparent_30%)]" />
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        <section className="space-y-3">
+        <section className="space-y-3 rounded-[30px] border border-fuchsia-500/10 bg-black/80 p-8">
           <div className="inline-flex items-center rounded-full border border-fuchsia-500/20 bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-300">
             Reputazione Lume
           </div>

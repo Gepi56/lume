@@ -3,9 +3,10 @@ import { RegisterForm } from "@/components/auth/RegisterForm";
 
 export default function RegisterPage() {
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+    <main className="relative min-h-screen bg-gradient-to-b from-[#1a1204] via-[#080602] to-black text-zinc-100">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(180,83,9,0.18),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(21,128,61,0.14),transparent_30%)]" />
       <div className="mx-auto flex w-full max-w-6xl items-center px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid w-full grid-cols-1 overflow-hidden rounded-[28px] border border-white/10 bg-white/5 shadow-2xl shadow-black/20 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid w-full grid-cols-1 overflow-hidden rounded-[28px] border border-white/10 bg-black/75 shadow-2xl shadow-black/20 lg:grid-cols-[1.05fr_0.95fr]">
           <section className="relative hidden min-h-[540px] overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-8 lg:block">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(217,119,6,0.18),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.16),transparent_40%)]" />
             <div className="relative z-10 flex h-full flex-col justify-between">
@@ -31,7 +32,7 @@ export default function RegisterPage() {
             </div>
           </section>
 
-          <section className="bg-zinc-950/70 p-6 sm:p-7 lg:p-8">
+          <section className="bg-gradient-to-b from-[#1a1204] via-[#080602] to-black/70 p-6 sm:p-7 lg:p-8">
             <div className="mx-auto flex h-full w-full max-w-md flex-col justify-center">
               <div className="mb-6 space-y-2">
                 <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300">

@@ -8,9 +8,10 @@ export default async function ElitePage() {
   const data = await getLumeFeaturedPublicData();
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+    <main className="relative min-h-screen bg-gradient-to-b from-[#1a0e04] via-[#0a0502] to-black text-zinc-100">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(180,83,9,0.14),transparent_30%)]" />
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        <section className="space-y-3">
+        <section className="space-y-3 rounded-[30px] border border-amber-500/10 bg-black/80 p-8">
           <div className="inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-300">
             Livello Elite
           </div>
