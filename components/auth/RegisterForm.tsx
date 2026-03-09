@@ -3,13 +3,32 @@
 import { FormEvent, useMemo, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 
+type StatusState = {
+  type: "idle" | "error" | "success";
+  message: string;
+};
+
+type CreatorInsertPayload = {
+  email: string;
+  display_name: string;
+  city: string | null;
+  age: number | null;
+  bio: string | null;
+  tags: string[];
+  avatar_url: string | null;
+  gallery_urls: string[];
+  tier: string;
+  is_verified: boolean;
+  is_active: boolean;
+};
+
 export function RegisterForm() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [status, setStatus] = useState<{ type: "idle" | "error" | "success"; message: string }>({
+  const [status, setStatus] = useState<StatusState>({
     type: "idle",
     message: "",
   });
@@ -38,25 +57,55 @@ export function RegisterForm() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanDisplayName = displayName.trim();
+
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: cleanEmail,
         password,
         options: {
           data: {
-            display_name: displayName.trim(),
+            display_name: cleanDisplayName,
           },
         },
       });
 
-      if (error) {
-        setStatus({ type: "error", message: error.message });
+      if (signUpError) {
+        setStatus({ type: "error", message: signUpError.message });
+        return;
+      }
+
+      const creatorPayload: CreatorInsertPayload = {
+        email: cleanEmail,
+        display_name: cleanDisplayName || cleanEmail.split("@")[0] || "Nuovo profilo",
+        city: null,
+        age: null,
+        bio: null,
+        tags: [],
+        avatar_url: null,
+        gallery_urls: [],
+        tier: "base",
+        is_verified: false,
+        is_active: true,
+      };
+
+      const { error: creatorError } = await supabase
+        .from("creators")
+        .upsert([creatorPayload], { onConflict: "email" });
+
+      if (creatorError) {
+        setStatus({
+          type: "error",
+          message:
+            "Account creato, ma non sono riuscito a preparare automaticamente il profilo creator. Controlla le policy Supabase della tabella creators.",
+        });
         return;
       }
 
       setStatus({
         type: "success",
         message:
-          "Registrazione completata. Controlla la tua email per l’eventuale conferma dell’account.",
+          "Registrazione completata e profilo creator base creato. Controlla la tua email per l’eventuale conferma dell’account.",
       });
 
       setDisplayName("");

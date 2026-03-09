@@ -1,10 +1,9 @@
-
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
-import { LayoutDashboard, Star, ShieldCheck, Crown } from "lucide-react";
+import { LayoutDashboard, Star, ShieldCheck, Crown, PencilLine } from "lucide-react";
 
 type DashboardState = {
   displayName: string;
@@ -108,7 +107,7 @@ export default function DashboardPage() {
           };
         }
       } catch {
-        // fallback to auth-only data
+        // fallback
       }
 
       if (!active) return;
@@ -149,24 +148,8 @@ export default function DashboardPage() {
               Devi effettuare il login
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-              La dashboard è disponibile solo dopo l’accesso. Una volta autenticato vedrai
-              il tuo riepilogo account, lo stato del profilo e il collegamento rapido alle aree future.
+              La dashboard è disponibile solo dopo l’accesso.
             </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/login"
-                className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/15 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
-              >
-                Vai al login
-              </Link>
-              <Link
-                href="/register"
-                className="inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/15 px-4 py-2 text-sm font-medium text-amber-200 transition hover:bg-amber-500/20"
-              >
-                Registrati
-              </Link>
-            </div>
           </section>
         </div>
       </main>
@@ -222,9 +205,19 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-white/10 bg-white/5 px-5 py-4 text-sm text-zinc-300">
-              <div className="text-zinc-500">Stato profilo</div>
-              <div className="mt-1 text-lg font-semibold text-white">{getTierLabel(state.tier)}</div>
+            <div className="flex flex-wrap gap-3">
+              <div className="rounded-[24px] border border-white/10 bg-white/5 px-5 py-4 text-sm text-zinc-300">
+                <div className="text-zinc-500">Stato profilo</div>
+                <div className="mt-1 text-lg font-semibold text-white">{getTierLabel(state.tier)}</div>
+              </div>
+
+              <Link
+                href="/account"
+                className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/15 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
+              >
+                <PencilLine className="mr-2 h-4 w-4" />
+                Modifica profilo
+              </Link>
             </div>
           </div>
         </section>
@@ -239,12 +232,11 @@ export default function DashboardPage() {
         <section className="rounded-[30px] border border-white/10 bg-black/80 p-8">
           <h2 className="text-xl font-semibold text-white">Prossimi sviluppi</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
-            Questa è la dashboard base post-login. Da qui potremo aggiungere modifica profilo,
-            gestione immagini, area creator, messaggi reali, preferenze account e controlli avanzati.
+            Questa è la dashboard base post-login. Ora puoi anche modificare il profilo.
           </p>
 
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <InfoCard title="Profilo" text="Base pronta per modifica dati, città, bio e immagini." />
+            <InfoCard title="Profilo" text="Ora puoi aggiornare nome, città, bio, età e avatar." />
             <InfoCard title="Reputazione" text="Spazio ideale per score, recensioni, andamento e badge." />
             <InfoCard title="Messaggi" text="Predisposizione per futura chat reale persistente." />
           </div>
