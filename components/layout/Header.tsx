@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -49,7 +48,7 @@ function getTierLabel(tier: string | null) {
   if (tier === "elite") return "Elite";
   if (tier === "pro") return "Pro";
   if (tier === "plus") return "Plus";
-  return "Base";
+  return "Profilo base";
 }
 
 function getStatusTone(tier: string | null, isVerified: boolean) {
@@ -63,6 +62,13 @@ function initialsFromName(name: string) {
   if (parts.length === 0) return "L";
   if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function maskEmail(email: string) {
+  const [name, domain] = email.split("@");
+  if (!domain) return email;
+  if (name.length <= 3) return `${name[0] || ""}***@${domain}`;
+  return `${name.slice(0, 3)}***@${domain}`;
 }
 
 function NavPill({ item, active }: { item: NavItem; active: boolean }) {
@@ -183,13 +189,13 @@ function UserBadge({ profile }: { profile: HeaderProfile }) {
           {profile.displayName}
         </span>
         <span className="max-w-[150px] truncate text-[11px] text-slate-500">
-          {profile.email}
+          {maskEmail(profile.email)}
         </span>
       </div>
 
       <div className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${toneClasses}`}>
         <ShieldCheck className="h-3.5 w-3.5" />
-        <span>{profile.isVerified ? getTierLabel(profile.tier) : "Profilo base"}</span>
+        <span>{getTierLabel(profile.tier)}</span>
       </div>
     </div>
   );
@@ -272,7 +278,7 @@ export default function Header() {
         tier = creator.tier || null;
       }
     } catch {
-      // keep auth-only fallback
+      // fallback auth
     }
 
     setProfile({
