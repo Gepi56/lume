@@ -3,31 +3,26 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
-import { LayoutDashboard, Star, ShieldCheck, Crown, PencilLine } from "lucide-react";
+import { LayoutDashboard, Star, PencilLine, UserRound } from "lucide-react";
 
 type DashboardState = {
   displayName: string;
   email: string;
   avatarUrl: string | null;
-  city: string | null;
-  isVerified: boolean;
-  tier: string | null;
-  reviewsCount: number;
-  averageRating: number;
 };
-
-function getTierLabel(tier: string | null) {
-  if (tier === "elite") return "Elite";
-  if (tier === "pro") return "Pro";
-  if (tier === "plus") return "Plus";
-  return "Base";
-}
 
 function initialsFromName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "L";
   if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function maskEmail(email: string) {
+  const [name, domain] = email.split("@");
+  if (!domain) return email;
+  if (name.length <= 3) return `${name[0] || ""}***@${domain}`;
+  return `${name.slice(0, 3)}***@${domain}`;
 }
 
 export default function DashboardPage() {
@@ -59,55 +54,26 @@ export default function DashboardPage() {
         displayName: fallbackName,
         email: user.email,
         avatarUrl: null,
-        city: null,
-        isVerified: false,
-        tier: null,
-        reviewsCount: 0,
-        averageRating: 0,
       };
 
       try {
-        const { data: creatorRows } = await supabase
-          .from("creators")
-          .select("id, display_name, avatar_url, city, is_verified, tier")
+        const { data: rows } = await supabase
+          .from("profiles")
+          .select("display_name, avatar_url")
           .eq("email", user.email)
           .limit(1);
 
-        const creator = Array.isArray(creatorRows) ? creatorRows[0] : null;
+        const profile = Array.isArray(rows) ? rows[0] : null;
 
-        if (creator) {
+        if (profile) {
           nextState = {
             ...nextState,
-            displayName: creator.display_name || fallbackName,
-            avatarUrl: creator.avatar_url || null,
-            city: creator.city || null,
-            isVerified: creator.is_verified === true,
-            tier: creator.tier || null,
-          };
-
-          const { data: reviewRows } = await supabase
-            .from("reviews")
-            .select("rating")
-            .eq("professional_id", creator.id);
-
-          const ratings = (reviewRows || [])
-            .map((row: { rating: number | null }) => Number(row.rating ?? 0))
-            .filter((v: number) => v > 0);
-
-          const reviewsCount = ratings.length;
-          const averageRating =
-            reviewsCount > 0
-              ? Number((ratings.reduce((sum: number, v: number) => sum + v, 0) / reviewsCount).toFixed(2))
-              : 0;
-
-          nextState = {
-            ...nextState,
-            reviewsCount,
-            averageRating,
+            displayName: profile.display_name || fallbackName,
+            avatarUrl: profile.avatar_url || null,
           };
         }
       } catch {
-        // fallback
+        // fallback auth
       }
 
       if (!active) return;
@@ -138,7 +104,7 @@ export default function DashboardPage() {
   if (!state) {
     return (
       <main className="relative min-h-screen bg-zinc-950 text-zinc-100">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(217,70,239,0.14),transparent_30%)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_24%),radial-gradient(circle_at-bottom_right,rgba(217,70,239,0.14),transparent_30%)]" />
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <section className="rounded-[30px] border border-white/10 bg-black/80 p-8">
             <div className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300">
@@ -147,9 +113,6 @@ export default function DashboardPage() {
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">
               Devi effettuare il login
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-              La dashboard è disponibile solo dopo l’accesso.
-            </p>
           </section>
         </div>
       </main>
@@ -183,32 +146,24 @@ export default function DashboardPage() {
                 <h1 className="text-3xl font-semibold tracking-tight text-white">
                   {state.displayName}
                 </h1>
-                <p className="mt-1 text-sm text-zinc-400">{state.email}</p>
+                <p className="mt-1 text-sm text-zinc-400">{maskEmail(state.email)}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1 rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200">
                     <LayoutDashboard className="h-3.5 w-3.5" />
                     Dashboard attiva
                   </span>
-                  {state.isVerified && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                      Verificata
-                    </span>
-                  )}
-                  {state.tier === "elite" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-300">
-                      <Crown className="h-3.5 w-3.5" />
-                      Elite
-                    </span>
-                  )}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/15 px-3 py-1 text-xs font-medium text-cyan-300">
+                    <UserRound className="h-3.5 w-3.5" />
+                    Cliente
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <div className="rounded-[24px] border border-white/10 bg-white/5 px-5 py-4 text-sm text-zinc-300">
-                <div className="text-zinc-500">Stato profilo</div>
-                <div className="mt-1 text-lg font-semibold text-white">{getTierLabel(state.tier)}</div>
+                <div className="text-zinc-500">Tipo account</div>
+                <div className="mt-1 text-lg font-semibold text-white">Cliente</div>
               </div>
 
               <Link
@@ -223,22 +178,22 @@ export default function DashboardPage() {
         </section>
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Città" value={state.city || "Non indicata"} />
-          <MetricCard label="Tier" value={getTierLabel(state.tier)} />
-          <MetricCard label="Recensioni" value={String(state.reviewsCount)} />
-          <MetricCard label="Rating medio" value={state.reviewsCount > 0 ? `${state.averageRating}/5` : "N/D"} />
+          <MetricCard label="Tipo account" value="Cliente" />
+          <MetricCard label="Profilo pubblico creator" value="Separato" />
+          <MetricCard label="Recensioni creator" value="Non applicabile" />
+          <MetricCard label="Stato account" value="Attivo" />
         </section>
 
         <section className="rounded-[30px] border border-white/10 bg-black/80 p-8">
           <h2 className="text-xl font-semibold text-white">Prossimi sviluppi</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
-            Questa è la dashboard base post-login. Ora puoi anche modificare il profilo.
+            Ora i clienti usano la tabella profiles, mentre le professioniste continueranno a usare creators.
           </p>
 
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <InfoCard title="Profilo" text="Ora puoi aggiornare nome, città, bio, età e avatar." />
-            <InfoCard title="Reputazione" text="Spazio ideale per score, recensioni, andamento e badge." />
-            <InfoCard title="Messaggi" text="Predisposizione per futura chat reale persistente." />
+            <InfoCard title="Profilo cliente" text="Nome e avatar dell’utente registrato." />
+            <InfoCard title="Creator separati" text="Bio, città, gallery e reputation restano nella tabella creators." />
+            <InfoCard title="Base solida" text="Struttura pronta per area admin e flussi distinti." />
           </div>
         </section>
       </div>

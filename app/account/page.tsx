@@ -10,12 +10,10 @@ export default function AccountPage() {
             Account Lume
           </div>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            Modifica profilo
+            Modifica profilo utente
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400 sm:text-base">
-            Qui puoi aggiornare i dati base del tuo profilo collegato alla tabella creators:
-            nome visualizzato, città, età, bio e avatar. Questo è il primo passo concreto
-            verso una vera area creator.
+            Qui puoi aggiornare il profilo del cliente registrato. I profili pubblici delle professioniste restano separati e saranno gestiti nella tabella creators.
           </p>
         </section>
 

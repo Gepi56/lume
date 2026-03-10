@@ -17,12 +17,7 @@ type PasswordState = {
 type FormState = {
   email: string;
   display_name: string;
-  city: string;
-  age: string;
-  bio: string;
   avatar_url: string;
-  tier: string;
-  is_verified: boolean;
 };
 
 function initialsFromName(name: string) {
@@ -60,12 +55,7 @@ export function EditProfileForm() {
   const [form, setForm] = useState<FormState>({
     email: "",
     display_name: "",
-    city: "",
-    age: "",
-    bio: "",
     avatar_url: "",
-    tier: "base",
-    is_verified: false,
   });
 
   const [passwordForm, setPasswordForm] = useState<PasswordState>({
@@ -96,33 +86,23 @@ export function EditProfileForm() {
 
       try {
         const { data: rows } = await supabase
-          .from("creators")
-          .select("email, display_name, city, age, bio, avatar_url, tier, is_verified")
+          .from("profiles")
+          .select("email, display_name, avatar_url")
           .eq("email", cleanEmail)
           .limit(1);
 
-        const creator = Array.isArray(rows) ? rows[0] : null;
+        const profile = Array.isArray(rows) ? rows[0] : null;
 
         setForm({
           email: cleanEmail,
-          display_name: creator?.display_name || fallbackName,
-          city: creator?.city || "",
-          age: creator?.age != null ? String(creator.age) : "",
-          bio: creator?.bio || "",
-          avatar_url: creator?.avatar_url || "",
-          tier: creator?.tier || "base",
-          is_verified: creator?.is_verified === true,
+          display_name: profile?.display_name || fallbackName,
+          avatar_url: profile?.avatar_url || "",
         });
       } catch {
         setForm({
           email: cleanEmail,
           display_name: fallbackName,
-          city: "",
-          age: "",
-          bio: "",
           avatar_url: "",
-          tier: "base",
-          is_verified: false,
         });
       } finally {
         if (active) setLoading(false);
@@ -142,6 +122,14 @@ export function EditProfileForm() {
 
   function updatePasswordField<K extends keyof PasswordState>(key: K, value: PasswordState[K]) {
     setPasswordForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function saveProfile(payload: { email: string; display_name: string; avatar_url: string | null }) {
+    const { error } = await supabase
+      .from("profiles")
+      .upsert([payload], { onConflict: "email" });
+
+    return error;
   }
 
   async function handleAvatarUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -192,30 +180,16 @@ export function EditProfileForm() {
 
       updateField("avatar_url", publicUrl);
 
-      const { error: creatorError } = await supabase
-        .from("creators")
-        .upsert(
-          [
-            {
-              email: form.email || user.email.toLowerCase(),
-              display_name:
-                form.display_name.trim() || user.email.split("@")[0] || "Utente Lume",
-              city: form.city.trim() || null,
-              age: form.age.trim() ? Number(form.age) : null,
-              bio: form.bio.trim() || null,
-              avatar_url: publicUrl,
-              tier: form.tier || "base",
-              is_verified: form.is_verified === true,
-              is_active: true,
-            },
-          ],
-          { onConflict: "email" }
-        );
+      const saveError = await saveProfile({
+        email: form.email || user.email.toLowerCase(),
+        display_name: form.display_name.trim() || user.email.split("@")[0] || "Utente Lume",
+        avatar_url: publicUrl,
+      });
 
-      if (creatorError) {
+      if (saveError) {
         setUploadStatus({
           type: "error",
-          message: "Avatar caricato, ma non sono riuscito a salvare l'URL nel profilo creator.",
+          message: "Avatar caricato, ma non sono riuscito a salvarlo nel profilo utente.",
         });
         return;
       }
@@ -241,31 +215,25 @@ export function EditProfileForm() {
     setStatus({ type: "idle", message: "" });
 
     try {
-      const payload = {
+      const saveError = await saveProfile({
         email: form.email,
         display_name: form.display_name.trim() || form.email.split("@")[0] || "Utente Lume",
-        city: form.city.trim() || null,
-        age: form.age.trim() ? Number(form.age) : null,
-        bio: form.bio.trim() || null,
         avatar_url: form.avatar_url.trim() || null,
-        tier: form.tier || "base",
-        is_verified: form.is_verified === true,
-        is_active: true,
-      };
+      });
 
-      const { error } = await supabase
-        .from("creators")
-        .upsert([payload], { onConflict: "email" });
-
-      if (error) {
+      if (saveError) {
         setStatus({
           type: "error",
-          message: "Non sono riuscito a salvare il profilo. Controlla le policy Supabase della tabella creators.",
+          message:
+            "Non sono riuscito a salvare il profilo utente. Controlla la tabella profiles e le sue policy.",
         });
         return;
       }
 
-      setStatus({ type: "success", message: "Profilo aggiornato correttamente." });
+      setStatus({
+        type: "success",
+        message: "Profilo utente aggiornato correttamente.",
+      });
     } catch {
       setStatus({
         type: "error",
@@ -376,17 +344,12 @@ export function EditProfileForm() {
 
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <span className="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200">
-              {form.tier || "base"}
+              Cliente
             </span>
-            {form.is_verified && (
-              <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
-                Verificata
-              </span>
-            )}
           </div>
 
           <div className="mt-6 w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-left">
-            <div className="text-sm font-medium text-white">Avatar</div>
+            <div className="text-sm font-medium text-white">Avatar cliente</div>
             <p className="mt-2 text-xs leading-5 text-zinc-400">
               Carica una foto direttamente su Supabase Storage. Serve un bucket pubblico chiamato <span className="font-semibold text-zinc-300">avatars</span>.
             </p>
@@ -405,19 +368,15 @@ export function EditProfileForm() {
 
             <StatusMessage type={uploadStatus.type} message={uploadStatus.message} />
           </div>
-
-          <p className="mt-5 text-sm leading-6 text-zinc-400">
-            Anteprima del profilo pubblico. I dati sensibili restano separati nella sezione sicurezza account.
-          </p>
         </div>
       </section>
 
       <div className="flex flex-col gap-8">
         <section className="rounded-[30px] border border-white/10 bg-black/80 p-6 sm:p-8">
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-white">Profilo pubblico</h2>
+            <h2 className="text-2xl font-semibold text-white">Profilo utente</h2>
             <p className="mt-2 text-sm leading-6 text-zinc-400">
-              Qui gestisci i dati che compongono la base del profilo collegato a creators.
+              Qui gestisci il tuo profilo cliente. I dati pubblici delle professioniste restano separati nella tabella creators.
             </p>
           </div>
 
@@ -431,25 +390,7 @@ export function EditProfileForm() {
                 placeholder="Come vuoi apparire"
               />
 
-              <Field
-                label="Città"
-                type="text"
-                value={form.city}
-                onChange={(value) => updateField("city", value)}
-                placeholder="Es. Milano"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <MaskedField label="Email account" value={maskEmail(form.email)} />
-
-              <Field
-                label="Età"
-                type="number"
-                value={form.age}
-                onChange={(value) => updateField("age", value)}
-                placeholder="Es. 28"
-              />
             </div>
 
             <Field
@@ -460,20 +401,9 @@ export function EditProfileForm() {
               placeholder="https://..."
             />
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-zinc-200">Bio</span>
-              <textarea
-                value={form.bio}
-                onChange={(event) => updateField("bio", event.target.value)}
-                rows={5}
-                placeholder="Descrivi il profilo in modo semplice e chiaro"
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-cyan-400/40 focus:bg-white/[0.07]"
-              />
-            </label>
-
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <div className="text-xs text-zinc-500">
-                Tier e verifica restano per ora gestiti dal sistema o da backend/admin.
+                Questo profilo è per l’utente cliente, non per la professionista/creator.
               </div>
 
               <button
@@ -493,8 +423,7 @@ export function EditProfileForm() {
           <div className="mb-6">
             <h2 className="text-2xl font-semibold text-white">Sicurezza account</h2>
             <p className="mt-2 text-sm leading-6 text-zinc-400">
-              Qui gestisci le informazioni sensibili. L’indirizzo email resta mascherato
-              e il cambio password è separato dal profilo pubblico.
+              L’indirizzo email resta mascherato e il cambio password è separato dal profilo utente.
             </p>
           </div>
 
@@ -521,7 +450,7 @@ export function EditProfileForm() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <div className="text-xs text-zinc-500">
-                Per ora il cambio email non è esposto in interfaccia per evitare errori e conflitti.
+                Per ora il cambio email non è esposto in interfaccia.
               </div>
 
               <button

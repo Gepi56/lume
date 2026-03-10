@@ -8,18 +8,10 @@ type StatusState = {
   message: string;
 };
 
-type CreatorInsertPayload = {
+type ProfileInsertPayload = {
   email: string;
   display_name: string;
-  city: string | null;
-  age: number | null;
-  bio: string | null;
-  tags: string[];
   avatar_url: string | null;
-  gallery_urls: string[];
-  tier: string;
-  is_verified: boolean;
-  is_active: boolean;
 };
 
 export function RegisterForm() {
@@ -75,29 +67,21 @@ export function RegisterForm() {
         return;
       }
 
-      const creatorPayload: CreatorInsertPayload = {
+      const profilePayload: ProfileInsertPayload = {
         email: cleanEmail,
-        display_name: cleanDisplayName || cleanEmail.split("@")[0] || "Nuovo profilo",
-        city: null,
-        age: null,
-        bio: null,
-        tags: [],
+        display_name: cleanDisplayName || cleanEmail.split("@")[0] || "Nuovo utente",
         avatar_url: null,
-        gallery_urls: [],
-        tier: "base",
-        is_verified: false,
-        is_active: true,
       };
 
-      const { error: creatorError } = await supabase
-        .from("creators")
-        .upsert([creatorPayload], { onConflict: "email" });
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert([profilePayload], { onConflict: "email" });
 
-      if (creatorError) {
+      if (profileError) {
         setStatus({
           type: "error",
           message:
-            "Account creato, ma non sono riuscito a preparare automaticamente il profilo creator. Controlla le policy Supabase della tabella creators.",
+            "Account creato, ma non sono riuscito a preparare automaticamente il profilo utente. Controlla la tabella profiles e le sue policy.",
         });
         return;
       }
@@ -105,7 +89,7 @@ export function RegisterForm() {
       setStatus({
         type: "success",
         message:
-          "Registrazione completata e profilo creator base creato. Controlla la tua email per l’eventuale conferma dell’account.",
+          "Registrazione completata e profilo utente base creato. Controlla la tua email per l’eventuale conferma dell’account.",
       });
 
       setDisplayName("");

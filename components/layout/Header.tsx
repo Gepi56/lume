@@ -28,8 +28,7 @@ type HeaderProfile = {
   email: string;
   displayName: string;
   avatarUrl: string | null;
-  isVerified: boolean;
-  tier: string | null;
+  badgeLabel: string;
 };
 
 const NAV: NavItem[] = [
@@ -42,19 +41,6 @@ const NAV: NavItem[] = [
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
-}
-
-function getTierLabel(tier: string | null) {
-  if (tier === "elite") return "Elite";
-  if (tier === "pro") return "Pro";
-  if (tier === "plus") return "Plus";
-  return "Profilo base";
-}
-
-function getStatusTone(tier: string | null, isVerified: boolean) {
-  if (tier === "elite") return "amber";
-  if (isVerified) return "emerald";
-  return "slate";
 }
 
 function initialsFromName(name: string) {
@@ -161,15 +147,6 @@ function AuthPill({
 }
 
 function UserBadge({ profile }: { profile: HeaderProfile }) {
-  const tone = getStatusTone(profile.tier, profile.isVerified);
-
-  const toneClasses =
-    tone === "amber"
-      ? "border-amber-200 bg-amber-50/90 text-amber-900"
-      : tone === "emerald"
-      ? "border-emerald-200 bg-emerald-50/90 text-emerald-900"
-      : "border-slate-200 bg-white/70 text-slate-800";
-
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-2.5 py-2 shadow-sm">
       {profile.avatarUrl ? (
@@ -193,9 +170,9 @@ function UserBadge({ profile }: { profile: HeaderProfile }) {
         </span>
       </div>
 
-      <div className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${toneClasses}`}>
+      <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-2.5 py-1 text-xs font-semibold text-slate-800">
         <ShieldCheck className="h-3.5 w-3.5" />
-        <span>{getTierLabel(profile.tier)}</span>
+        <span>{profile.badgeLabel}</span>
       </div>
     </div>
   );
@@ -257,25 +234,22 @@ export default function Header() {
       user.email.split("@")[0] ||
       "Utente Lume";
 
-    let avatarUrl: string | null = null;
-    let isVerified = false;
-    let tier: string | null = null;
     let displayName = fallbackName;
+    let avatarUrl: string | null = null;
+    let badgeLabel = "Cliente";
 
     try {
-      const { data: creatorRow } = await supabase
-        .from("creators")
-        .select("display_name, avatar_url, is_verified, tier")
+      const { data: profileRows } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
         .eq("email", user.email)
         .limit(1);
 
-      const creator = Array.isArray(creatorRow) ? creatorRow[0] : null;
+      const profileRow = Array.isArray(profileRows) ? profileRows[0] : null;
 
-      if (creator) {
-        displayName = creator.display_name || fallbackName;
-        avatarUrl = creator.avatar_url || null;
-        isVerified = creator.is_verified === true;
-        tier = creator.tier || null;
+      if (profileRow) {
+        displayName = profileRow.display_name || fallbackName;
+        avatarUrl = profileRow.avatar_url || null;
       }
     } catch {
       // fallback auth
@@ -285,8 +259,7 @@ export default function Header() {
       email: user.email,
       displayName,
       avatarUrl,
-      isVerified,
-      tier,
+      badgeLabel,
     });
   }
 
