@@ -1,10 +1,11 @@
-﻿import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import Link from "next/link";
 import ProfilesGrid from "@/components/explore/ProfilesGrid";
-import { motion } from "framer-motion";
+import { getCreatorPublicHref } from "@/lib/creators/public";
+import { supabase } from "@/lib/supabase/client";
 
 type Creator = {
   id: string;
+  slug: string | null;
   display_name: string | null;
   city: string | null;
   age: number | null;
@@ -32,7 +33,7 @@ function FeatureCard({
 export default async function HomePage() {
   const { data } = await supabase
     .from("creators")
-    .select("id, display_name, city, age, avatar_url, tier, is_verified, is_active")
+    .select("id, slug, display_name, city, age, avatar_url, tier, is_verified, is_active")
     .eq("is_active", true)
     .limit(2);
 
@@ -42,12 +43,10 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-12">
-      {/* HERO CON FOTO SUBITO VISIBILI */}
       <section className="relative overflow-hidden rounded-[36px] border border-slate-200 bg-white shadow-sm">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.08),transparent_35%)]" />
 
         <div className="relative grid grid-cols-1 gap-8 px-8 py-10 md:px-12 md:py-12 lg:grid-cols-[1fr_0.95fr] lg:items-center">
-          {/* TESTO */}
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-amber-900">
               <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
@@ -84,15 +83,13 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* FOTO SUBITO A DESTRA */}
           <div className="grid grid-cols-2 gap-4">
             {first ? (
               <Link
-                href={`/profile/${first.id}`}
+                href={getCreatorPublicHref(first)}
                 className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
               >
                 <div className="relative aspect-[4/5] bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={first.avatar_url || ""}
                     alt={first.display_name || "Profilo"}
@@ -122,11 +119,10 @@ export default async function HomePage() {
 
             {second ? (
               <Link
-                href={`/profile/${second.id}`}
+                href={getCreatorPublicHref(second)}
                 className="group mt-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
               >
                 <div className="relative aspect-[4/5] bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={second.avatar_url || ""}
                     alt={second.display_name || "Profilo"}
@@ -163,7 +159,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* PROFILI DEL MOMENTO */}
       <section className="space-y-6">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -195,7 +190,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* COME FUNZIONA */}
       <section className="space-y-6">
         <div>
           <div className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
@@ -222,7 +216,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ELITE */}
       <section className="rounded-[36px] border border-slate-200 bg-slate-900 px-8 py-10 text-white shadow-sm md:px-10">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-center">
           <div>
@@ -240,36 +233,37 @@ export default async function HomePage() {
               all’interno della piattaforma.
             </p>
 
-            <div className="mt-7">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/elite"
                 className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-4 text-sm font-semibold text-slate-900 transition hover:opacity-95"
               >
                 Scopri Elite
               </Link>
+              <Link
+                href="/reputation"
+                className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Apri reputation
+              </Link>
             </div>
           </div>
 
-          <div className="grid gap-4">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <div className="text-sm font-semibold text-white">Badge dedicato</div>
-              <div className="mt-2 text-sm leading-6 text-white/70">
-                Un segnale visivo immediato che valorizza la presenza del profilo.
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+              <div className="text-xs uppercase tracking-[0.14em] text-white/50">Badge</div>
+              <div className="mt-3 text-xl font-semibold">Verificata</div>
+              <p className="mt-2 text-sm leading-6 text-white/70">
+                Maggiore credibilità visiva e più fiducia nel profilo.
+              </p>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <div className="text-sm font-semibold text-white">Maggiore impatto</div>
-              <div className="mt-2 text-sm leading-6 text-white/70">
-                Presentazione più forte, più elegante e più memorabile nella navigazione.
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <div className="text-sm font-semibold text-white">Esperienza premium</div>
-              <div className="mt-2 text-sm leading-6 text-white/70">
-                Coerenza con una piattaforma più esclusiva e più raffinata.
-              </div>
+            <div className="mt-8 rounded-[28px] border border-amber-400/20 bg-amber-400/10 p-5 backdrop-blur-sm">
+              <div className="text-xs uppercase tracking-[0.14em] text-amber-200/70">Tier</div>
+              <div className="mt-3 text-xl font-semibold text-amber-100">Elite</div>
+              <p className="mt-2 text-sm leading-6 text-amber-50/80">
+                Più visibilità, percezione premium e forza reputazionale.
+              </p>
             </div>
           </div>
         </div>

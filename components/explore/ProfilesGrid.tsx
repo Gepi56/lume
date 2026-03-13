@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { getCreatorPublicHref } from "@/lib/creators/public";
 
 type Creator = {
   id: string;
+  slug: string | null;
   display_name: string | null;
   city: string | null;
   age: number | null;
@@ -38,10 +40,9 @@ export default async function ProfilesGrid({
   onlyElite?: boolean;
   city?: string;
 }) {
-  // 1) Creators attivi
   let q = supabase
     .from("creators")
-    .select("id, display_name, city, age, bio, tags, avatar_url, tier, is_verified, is_active")
+    .select("id, slug, display_name, city, age, bio, tags, avatar_url, tier, is_verified, is_active")
     .eq("is_active", true)
     .limit(limit);
 
@@ -58,7 +59,6 @@ export default async function ProfilesGrid({
   const list = (creators ?? []) as Creator[];
   const ids = list.map((c) => c.id);
 
-  // 2) Reviews per calcolo media + count
   const reviewsById: Record<string, { sum: number; count: number }> = {};
   if (ids.length > 0) {
     const { data: reviews } = await supabase
@@ -86,17 +86,16 @@ export default async function ProfilesGrid({
         {list.map((c) => {
           const agg = reviewsById[c.id];
           const count = agg?.count ?? 0;
-          const avg = count > 0 ? round1(agg!.sum / count) : 0;
+          const avg = count > 0 ? round1(agg.sum / count) : 0;
 
           return (
             <Link
               key={c.id}
-              href={`/profile/${c.id}`}
+              href={getCreatorPublicHref(c)}
               className="group rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition hover:-translate-y-1 transition-transform duration-300"
             >
               <div className="relative">
                 <div className="aspect-[4/5] bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={c.avatar_url || ""}
                     alt={c.display_name || "Profilo"}
@@ -123,7 +122,8 @@ export default async function ProfilesGrid({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-lg font-semibold">
-                      {c.display_name || "—"}{c.age ? ` ${c.age}` : ""}
+                      {c.display_name || "—"}
+                      {c.age ? ` ${c.age}` : ""}
                     </div>
                     <div className="mt-1 text-sm text-slate-500">{c.city || "—"}</div>
                   </div>
@@ -134,9 +134,7 @@ export default async function ProfilesGrid({
                   </div>
                 </div>
 
-                <div className="mt-3 text-sm text-slate-700 line-clamp-2">
-                  {c.bio || "—"}
-                </div>
+                <div className="mt-3 text-sm text-slate-700 line-clamp-2">{c.bio || "—"}</div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {(Array.isArray(c.tags) ? c.tags : []).slice(0, 4).map((t) => (

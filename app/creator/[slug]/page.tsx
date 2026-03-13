@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import CreatorProfileView from "@/components/creators/CreatorProfileView";
 
 type PageProps = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 };
 
 type ReviewRow = {
@@ -16,16 +15,16 @@ type ReviewRow = {
   created_at: string;
 };
 
-export default async function LegacyProfilePage({ params }: PageProps) {
-  const { id } = await params;
+export default async function CreatorPage({ params }: PageProps) {
+  const { slug } = await params;
 
-  if (!id) {
+  if (!slug) {
     return (
       <div className="max-w-5xl mx-auto p-6">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-          <div className="font-semibold">ERRORE ROUTE: params.id è vuoto</div>
+          <div className="font-semibold">ERRORE ROUTE: params.slug è vuoto</div>
           <div className="text-sm mt-1">
-            Stai aprendo <span className="font-mono">/profile</span> senza id.
+            Stai aprendo <span className="font-mono">/creator</span> senza slug.
           </div>
           <div className="mt-3">
             <Link href="/explore" className="text-sm underline">
@@ -40,7 +39,7 @@ export default async function LegacyProfilePage({ params }: PageProps) {
   const { data: creator, error: creatorError } = await supabase
     .from("creators")
     .select("*")
-    .eq("id", id)
+    .eq("slug", slug)
     .maybeSingle();
 
   if (creatorError) {
@@ -55,7 +54,7 @@ export default async function LegacyProfilePage({ params }: PageProps) {
     return (
       <div className="max-w-5xl mx-auto p-6">
         <div className="rounded-2xl border bg-white p-5">
-          <div className="text-lg font-semibold">Profilo non trovato.</div>
+          <div className="text-lg font-semibold">Creator non trovata.</div>
           <div className="mt-3">
             <Link href="/explore" className="text-sm underline">
               Torna ai profili
@@ -64,10 +63,6 @@ export default async function LegacyProfilePage({ params }: PageProps) {
         </div>
       </div>
     );
-  }
-
-  if (typeof creator.slug === "string" && creator.slug.trim()) {
-    redirect(`/creator/${creator.slug.trim()}`);
   }
 
   const { data: reviews, error: reviewsError } = await supabase

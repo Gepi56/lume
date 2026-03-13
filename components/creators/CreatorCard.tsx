@@ -4,9 +4,11 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { MapPin, Star } from "lucide-react";
 import { BadgePill } from "@/components/ui/BadgePill";
+import { getCreatorPublicHref } from "@/lib/creators/public";
 
 export type CreatorCardModel = {
   id: string;
+  slug?: string | null;
   name: string;
   age: number;
   city: string;
@@ -23,7 +25,7 @@ export default function CreatorCard({ model }: { model: CreatorCardModel }) {
   const elite = model.badges.includes("elite");
 
   return (
-    <Link href={`/profile/${model.id}`} className="group block">
+    <Link href={getCreatorPublicHref({ id: model.id, slug: model.slug })} className="group block">
       <motion.div
         whileHover={{ y: -4 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
@@ -32,10 +34,8 @@ export default function CreatorCard({ model }: { model: CreatorCardModel }) {
           elite ? "border-amber-200" : "border-slate-100",
         ].join(" ")}
       >
-        {/* Media */}
         <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-100">
           {model.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={model.imageUrl}
               alt={model.name}
@@ -47,14 +47,12 @@ export default function CreatorCard({ model }: { model: CreatorCardModel }) {
             </div>
           )}
 
-          {/* Glow Elite */}
           {elite && (
             <div className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100">
               <div className="absolute -inset-24 rounded-full blur-3xl bg-amber-200/35" />
             </div>
           )}
 
-          {/* Corner badges */}
           <div className="absolute left-4 top-4 flex flex-wrap gap-2">
             {model.badges.includes("elite") && (
               <motion.div
@@ -70,7 +68,6 @@ export default function CreatorCard({ model }: { model: CreatorCardModel }) {
           </div>
         </div>
 
-        {/* Info */}
         <div className="p-5 space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>

@@ -1,7 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
+import { getCreatorPublicHref } from "@/lib/creators/public";
 
 type CreatorRow = {
   id: string;
+  slug: string | null;
   display_name: string | null;
   city: string | null;
   bio: string | null;
@@ -23,6 +25,8 @@ type ReviewRow = {
 
 type RankingItem = {
   id: string;
+  slug: string | null;
+  publicHref: string;
   rank: number;
   displayName: string;
   city: string | null;
@@ -127,7 +131,7 @@ export async function getLumeRankingData(): Promise<RankingData> {
   try {
     const { data: creatorsRaw, error: creatorsError } = await supabase
       .from("creators")
-      .select("id, display_name, city, bio, avatar_url, gallery_urls, tier, is_verified, is_active")
+      .select("id, slug, display_name, city, bio, avatar_url, gallery_urls, tier, is_verified, is_active")
       .eq("is_active", true);
 
     if (creatorsError || !creatorsRaw || creatorsRaw.length === 0) {
@@ -174,20 +178,12 @@ export async function getLumeRankingData(): Promise<RankingData> {
         const reviewsCount = validRatings.length;
         const averageRating =
           reviewsCount > 0
-            ? Number(
-                (
-                  validRatings.reduce((sum, rating) => sum + rating, 0) / reviewsCount
-                ).toFixed(2)
-              )
+            ? Number((validRatings.reduce((sum, rating) => sum + rating, 0) / reviewsCount).toFixed(2))
             : 0;
 
         const positiveCount = validRatings.filter((rating) => rating >= 4).length;
-        const positivePct =
-          reviewsCount > 0 ? Math.round((positiveCount / reviewsCount) * 100) : 0;
-
-        const verifiedReviewsCount = creatorReviews.filter(
-          (review) => review.verified === true
-        ).length;
+        const positivePct = reviewsCount > 0 ? Math.round((positiveCount / reviewsCount) * 100) : 0;
+        const verifiedReviewsCount = creatorReviews.filter((review) => review.verified === true).length;
 
         const score = calculateScore({
           averageRating,
@@ -199,7 +195,7 @@ export async function getLumeRankingData(): Promise<RankingData> {
         });
 
         const reliabilityScore = clamp(
-          Math.round((positivePct * 0.7) + (creator.is_verified ? 15 : 0)),
+          Math.round(positivePct * 0.7 + (creator.is_verified ? 15 : 0)),
           0,
           100
         );
@@ -214,22 +210,19 @@ export async function getLumeRankingData(): Promise<RankingData> {
 
         const isElite =
           creator.tier === "elite" ||
-          (score >= 90 &&
-            creator.is_verified === true &&
-            reviewsCount >= 5 &&
-            averageRating >= 4.5);
+          (score >= 90 && creator.is_verified === true && reviewsCount >= 5 && averageRating >= 4.5);
 
         const trendLabel =
           score >= 90 ? "Top" : score >= 80 ? "Forte" : score >= 68 ? "Solido" : "Crescita";
 
         const imageUrl =
           creator.avatar_url ||
-          (Array.isArray(creator.gallery_urls) && creator.gallery_urls.length > 0
-            ? creator.gallery_urls[0]
-            : null);
+          (Array.isArray(creator.gallery_urls) && creator.gallery_urls.length > 0 ? creator.gallery_urls[0] : null);
 
         return {
           id: creator.id,
+          slug: creator.slug,
+          publicHref: getCreatorPublicHref({ id: creator.id, slug: creator.slug }),
           displayName: creator.display_name || "Profilo senza nome",
           city: creator.city || null,
           imageUrl,
@@ -257,6 +250,8 @@ export async function getLumeRankingData(): Promise<RankingData> {
       })
       .map((item, index) => ({
         id: item.id,
+        slug: item.slug,
+        publicHref: item.publicHref,
         rank: index + 1,
         displayName: item.displayName,
         city: item.city,
