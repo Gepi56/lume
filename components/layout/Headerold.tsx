@@ -13,7 +13,6 @@ import {
   LogOut,
   LayoutDashboard,
   ShieldCheck,
-  MapPin,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
@@ -29,8 +28,6 @@ type HeaderProfile = {
   email: string;
   displayName: string;
   avatarUrl: string | null;
-  city: string | null;
-  showCity: boolean;
   badgeLabel: string;
 };
 
@@ -165,19 +162,12 @@ function UserBadge({ profile }: { profile: HeaderProfile }) {
       )}
 
       <div className="flex flex-col pr-1">
-        <span className="max-w-[150px] truncate text-sm font-semibold text-slate-900">
+        <span className="max-w-[140px] truncate text-sm font-semibold text-slate-900">
           {profile.displayName}
         </span>
-        <span className="max-w-[160px] truncate text-[11px] text-slate-500">
+        <span className="max-w-[150px] truncate text-[11px] text-slate-500">
           {maskEmail(profile.email)}
         </span>
-
-        {profile.showCity && profile.city ? (
-          <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-slate-500">
-            <MapPin className="h-3 w-3" />
-            {profile.city}
-          </span>
-        ) : null}
       </div>
 
       <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-2.5 py-1 text-xs font-semibold text-slate-800">
@@ -246,14 +236,12 @@ export default function Header() {
 
     let displayName = fallbackName;
     let avatarUrl: string | null = null;
-    let city: string | null = null;
-    let showCity = false;
-    const badgeLabel = "Cliente";
+    let badgeLabel = "Cliente";
 
     try {
       const { data: profileRows } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url, city, show_city")
+        .select("display_name, avatar_url")
         .eq("email", user.email)
         .limit(1);
 
@@ -262,8 +250,6 @@ export default function Header() {
       if (profileRow) {
         displayName = profileRow.display_name || fallbackName;
         avatarUrl = profileRow.avatar_url || null;
-        city = profileRow.city || null;
-        showCity = profileRow.show_city === true;
       }
     } catch {
       // fallback auth
@@ -273,8 +259,6 @@ export default function Header() {
       email: user.email,
       displayName,
       avatarUrl,
-      city,
-      showCity,
       badgeLabel,
     });
   }

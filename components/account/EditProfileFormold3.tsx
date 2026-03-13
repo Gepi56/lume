@@ -18,10 +18,6 @@ type FormState = {
   email: string;
   display_name: string;
   avatar_url: string;
-  city: string;
-  bio: string;
-  show_city: boolean;
-  show_bio: boolean;
 };
 
 function initialsFromName(name: string) {
@@ -42,69 +38,6 @@ function sanitizeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
-async function resizeImage(file: File): Promise<File> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const img = new Image();
-
-      img.onload = () => {
-        const maxWidth = 800;
-        const maxHeight = 800;
-
-        let { width, height } = img;
-
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width = Math.round(width * ratio);
-          height = Math.round(height * ratio);
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          reject(new Error("Impossibile creare il contesto canvas."));
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error("Impossibile generare il file compresso."));
-              return;
-            }
-
-            const compressedFile = new File(
-              [blob],
-              file.name.replace(/\.[^.]+$/, ".jpg"),
-              {
-                type: "image/jpeg",
-                lastModified: Date.now(),
-              }
-            );
-
-            resolve(compressedFile);
-          },
-          "image/jpeg",
-          0.82
-        );
-      };
-
-      img.onerror = () => reject(new Error("Impossibile leggere l'immagine."));
-      img.src = reader.result as string;
-    };
-
-    reader.onerror = () => reject(new Error("Impossibile leggere il file."));
-    reader.readAsDataURL(file);
-  });
-}
-
 export function EditProfileForm() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -123,10 +56,6 @@ export function EditProfileForm() {
     email: "",
     display_name: "",
     avatar_url: "",
-    city: "",
-    bio: "",
-    show_city: false,
-    show_bio: false,
   });
 
   const [passwordForm, setPasswordForm] = useState<PasswordState>({
@@ -158,7 +87,7 @@ export function EditProfileForm() {
       try {
         const { data: rows } = await supabase
           .from("profiles")
-          .select("email, display_name, avatar_url, city, bio, show_city, show_bio")
+          .select("email, display_name, avatar_url")
           .eq("email", cleanEmail)
           .limit(1);
 
@@ -168,20 +97,12 @@ export function EditProfileForm() {
           email: cleanEmail,
           display_name: profile?.display_name || fallbackName,
           avatar_url: profile?.avatar_url || "",
-          city: profile?.city || "",
-          bio: profile?.bio || "",
-          show_city: profile?.show_city === true,
-          show_bio: profile?.show_bio === true,
         });
       } catch {
         setForm({
           email: cleanEmail,
           display_name: fallbackName,
           avatar_url: "",
-          city: "",
-          bio: "",
-          show_city: false,
-          show_bio: false,
         });
       } finally {
         if (active) setLoading(false);
@@ -203,15 +124,7 @@ export function EditProfileForm() {
     setPasswordForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function saveProfile(payload: {
-    email: string;
-    display_name: string;
-    avatar_url: string | null;
-    city: string | null;
-    bio: string | null;
-    show_city: boolean;
-    show_bio: boolean;
-  }) {
+  async function saveProfile(payload: { email: string; display_name: string; avatar_url: string | null }) {
     const { error } = await supabase
       .from("profiles")
       .upsert([payload], { onConflict: "email" });
@@ -246,21 +159,12 @@ export function EditProfileForm() {
         return;
       }
 
-      if (file.size > 10 * 1024 * 1024) {
-        setUploadStatus({
-          type: "error",
-          message: "Il file è troppo grande. Usa un'immagine sotto i 10 MB.",
-        });
-        return;
-      }
-
-      const processedFile = await resizeImage(file);
-      const safeFileName = sanitizeFileName(processedFile.name);
+      const safeFileName = sanitizeFileName(file.name);
       const filePath = `${user.id}/${Date.now()}_${safeFileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, processedFile, { upsert: true });
+        .upload(filePath, file, { upsert: true });
 
       if (uploadError) {
         setUploadStatus({
@@ -280,10 +184,6 @@ export function EditProfileForm() {
         email: form.email || user.email.toLowerCase(),
         display_name: form.display_name.trim() || user.email.split("@")[0] || "Utente Lume",
         avatar_url: publicUrl,
-        city: form.city.trim() || null,
-        bio: form.bio.trim() || null,
-        show_city: form.show_city,
-        show_bio: form.show_bio,
       });
 
       if (saveError) {
@@ -308,64 +208,67 @@ export function EditProfileForm() {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
-
   async function removeAvatar() {
-    setUploadStatus({ type: "idle", message: "" });
+  setUploadStatus({ type: "idle", message: "" });
 
-    try {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData.user;
+  try {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
 
-      if (!user?.email) {
-        setUploadStatus({
-          type: "error",
-          message: "Devi essere autenticato per rimuovere l'avatar.",
-        });
-        return;
-      }
-
-      if (form.avatar_url) {
-        const splitToken = "/storage/v1/object/public/avatars/";
-        const path = form.avatar_url.includes(splitToken)
-          ? form.avatar_url.split(splitToken)[1]
-          : null;
-
-        if (path) {
-          await supabase.storage.from("avatars").remove([path]);
-        }
-      }
-
-      const saveError = await saveProfile({
-        email: form.email || user.email.toLowerCase(),
-        display_name: form.display_name.trim() || user.email.split("@")[0] || "Utente Lume",
-        avatar_url: null,
-        city: form.city.trim() || null,
-        bio: form.bio.trim() || null,
-        show_city: form.show_city,
-        show_bio: form.show_bio,
-      });
-
-      if (saveError) {
-        setUploadStatus({
-          type: "error",
-          message: "Avatar rimosso dallo storage, ma non dal profilo utente.",
-        });
-        return;
-      }
-
-      updateField("avatar_url", "");
-
-      setUploadStatus({
-        type: "success",
-        message: "Avatar rimosso correttamente.",
-      });
-    } catch {
+    if (!user?.email) {
       setUploadStatus({
         type: "error",
-        message: "Si è verificato un errore durante la rimozione dell'avatar.",
+        message: "Devi essere autenticato per rimuovere l'avatar.",
       });
+      return;
     }
+
+    if (form.avatar_url) {
+      const splitToken = "/storage/v1/object/public/avatars/";
+      const path = form.avatar_url.includes(splitToken)
+        ? form.avatar_url.split(splitToken)[1]
+        : null;
+
+      if (path) {
+        await supabase.storage.from("avatars").remove([path]);
+      }
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(
+        [
+          {
+            email: form.email || user.email.toLowerCase(),
+            display_name:
+              form.display_name.trim() || user.email.split("@")[0] || "Utente Lume",
+            avatar_url: null,
+          },
+        ],
+        { onConflict: "email" }
+      );
+
+    if (error) {
+      setUploadStatus({
+        type: "error",
+        message: "Avatar rimosso dallo storage, ma non dal profilo utente.",
+      });
+      return;
+    }
+
+    updateField("avatar_url", "");
+
+    setUploadStatus({
+      type: "success",
+      message: "Avatar rimosso correttamente.",
+    });
+  } catch {
+    setUploadStatus({
+      type: "error",
+      message: "Si è verificato un errore durante la rimozione dell'avatar.",
+    });
   }
+}
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -377,10 +280,6 @@ export function EditProfileForm() {
         email: form.email,
         display_name: form.display_name.trim() || form.email.split("@")[0] || "Utente Lume",
         avatar_url: form.avatar_url.trim() || null,
-        city: form.city.trim() || null,
-        bio: form.bio.trim() || null,
-        show_city: form.show_city,
-        show_bio: form.show_bio,
       });
 
       if (saveError) {
@@ -513,31 +412,30 @@ export function EditProfileForm() {
           <div className="mt-6 w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-left">
             <div className="text-sm font-medium text-white">Avatar cliente</div>
             <p className="mt-2 text-xs leading-5 text-zinc-400">
-              Carica una foto direttamente su Supabase Storage. Serve un bucket pubblico chiamato{" "}
-              <span className="font-semibold text-zinc-300">avatars</span>.
+              Carica una foto direttamente su Supabase Storage. Serve un bucket pubblico chiamato <span className="font-semibold text-zinc-300">avatars</span>.
             </p>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="mt-4 block w-full text-sm text-zinc-300 file:mr-4 file:rounded-full file:border-0 file:bg-cyan-500/15 file:px-4 file:py-2 file:text-sm file:font-medium file:text-cyan-200 hover:file:bg-cyan-500/20"
-            />
+           <input
+  ref={fileInputRef}
+  type="file"
+  accept="image/*"
+  onChange={handleAvatarUpload}
+  className="mt-4 block w-full text-sm text-zinc-300 file:mr-4 file:rounded-full file:border-0 file:bg-cyan-500/15 file:px-4 file:py-2 file:text-sm file:font-medium file:text-cyan-200 hover:file:bg-cyan-500/20"
+/>
 
-            {uploadingAvatar ? (
-              <p className="mt-3 text-xs text-cyan-300">Upload avatar in corso...</p>
-            ) : null}
+{uploadingAvatar ? (
+  <p className="mt-3 text-xs text-cyan-300">Upload avatar in corso...</p>
+) : null}
 
-            <button
-              type="button"
-              onClick={removeAvatar}
-              className="mt-3 text-sm text-red-400 hover:text-red-300"
-            >
-              Rimuovi avatar
-            </button>
+<button
+  type="button"
+  onClick={removeAvatar}
+  className="mt-3 text-sm text-red-400 hover:text-red-300"
+>
+  Rimuovi avatar
+</button>
 
-            <StatusMessage type={uploadStatus.type} message={uploadStatus.message} />
+<StatusMessage type={uploadStatus.type} message={uploadStatus.message} />
           </div>
         </div>
       </section>
@@ -563,39 +461,6 @@ export function EditProfileForm() {
 
               <MaskedField label="Email account" value={maskEmail(form.email)} />
             </div>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <Field
-                label="Città"
-                type="text"
-                value={form.city}
-                onChange={(value) => updateField("city", value)}
-                placeholder="Es. Milano"
-              />
-
-              <ToggleField
-                label="Mostra città"
-                checked={form.show_city}
-                onChange={(value) => updateField("show_city", value)}
-              />
-            </div>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-zinc-200">Bio breve</span>
-              <textarea
-                value={form.bio}
-                onChange={(event) => updateField("bio", event.target.value)}
-                rows={4}
-                placeholder="Scrivi una breve descrizione facoltativa"
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-cyan-400/40 focus:bg-white/[0.07]"
-              />
-            </label>
-
-            <ToggleField
-              label="Mostra bio"
-              checked={form.show_bio}
-              onChange={(value) => updateField("show_bio", value)}
-            />
 
             <Field
               label="Avatar URL"
@@ -716,28 +581,6 @@ function MaskedField({
         value={value}
         readOnly
         className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300 outline-none"
-      />
-    </label>
-  );
-}
-
-function ToggleField({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-      <span className="text-sm font-medium text-zinc-200">{label}</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="h-4 w-4"
       />
     </label>
   );

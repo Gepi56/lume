@@ -3,16 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
-import { LayoutDashboard, Star, PencilLine, UserRound, MapPin, FileText } from "lucide-react";
+import { LayoutDashboard, Star, PencilLine, UserRound } from "lucide-react";
 
 type DashboardState = {
   displayName: string;
   email: string;
   avatarUrl: string | null;
-  city: string | null;
-  bio: string | null;
-  showCity: boolean;
-  showBio: boolean;
 };
 
 function initialsFromName(name: string) {
@@ -58,16 +54,12 @@ export default function DashboardPage() {
         displayName: fallbackName,
         email: user.email,
         avatarUrl: null,
-        city: null,
-        bio: null,
-        showCity: false,
-        showBio: false,
       };
 
       try {
         const { data: rows } = await supabase
           .from("profiles")
-          .select("display_name, avatar_url, city, bio, show_city, show_bio")
+          .select("display_name, avatar_url")
           .eq("email", user.email)
           .limit(1);
 
@@ -78,10 +70,6 @@ export default function DashboardPage() {
             ...nextState,
             displayName: profile.display_name || fallbackName,
             avatarUrl: profile.avatar_url || null,
-            city: profile.city || null,
-            bio: profile.bio || null,
-            showCity: profile.show_city === true,
-            showBio: profile.show_bio === true,
           };
         }
       } catch {
@@ -116,7 +104,7 @@ export default function DashboardPage() {
   if (!state) {
     return (
       <main className="relative min-h-screen bg-zinc-950 text-zinc-100">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(217,70,239,0.14),transparent_30%)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_24%),radial-gradient(circle_at-bottom_right,rgba(217,70,239,0.14),transparent_30%)]" />
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <section className="rounded-[30px] border border-white/10 bg-black/80 p-8">
             <div className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300">
@@ -159,24 +147,15 @@ export default function DashboardPage() {
                   {state.displayName}
                 </h1>
                 <p className="mt-1 text-sm text-zinc-400">{maskEmail(state.email)}</p>
-
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1 rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200">
                     <LayoutDashboard className="h-3.5 w-3.5" />
                     Dashboard attiva
                   </span>
-
                   <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/15 px-3 py-1 text-xs font-medium text-cyan-300">
                     <UserRound className="h-3.5 w-3.5" />
                     Cliente
                   </span>
-
-                  {state.showCity && state.city ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-zinc-200">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {state.city}
-                    </span>
-                  ) : null}
                 </div>
               </div>
             </div>
@@ -200,32 +179,19 @@ export default function DashboardPage() {
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Tipo account" value="Cliente" />
-          <MetricCard label="Città" value={state.showCity && state.city ? state.city : "Nascosta"} />
-          <MetricCard label="Bio" value={state.showBio && state.bio ? "Visibile" : "Nascosta"} />
+          <MetricCard label="Profilo pubblico creator" value="Separato" />
+          <MetricCard label="Recensioni creator" value="Non applicabile" />
           <MetricCard label="Stato account" value="Attivo" />
         </section>
-
-        {state.showBio && state.bio ? (
-          <section className="rounded-[30px] border border-white/10 bg-black/80 p-8">
-            <div className="flex items-center gap-2 text-white">
-              <FileText className="h-5 w-5 text-cyan-300" />
-              <h2 className="text-xl font-semibold">Bio visibile</h2>
-            </div>
-
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-300">
-              {state.bio}
-            </p>
-          </section>
-        ) : null}
 
         <section className="rounded-[30px] border border-white/10 bg-black/80 p-8">
           <h2 className="text-xl font-semibold text-white">Prossimi sviluppi</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
-            Ora il profilo cliente legge correttamente da profiles e mostra solo i dati consentiti dai flag di visibilità.
+            Ora i clienti usano la tabella profiles, mentre le professioniste continueranno a usare creators.
           </p>
 
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <InfoCard title="Profilo cliente" text="Nome, avatar, città e bio con visibilità configurabile." />
+            <InfoCard title="Profilo cliente" text="Nome e avatar dell’utente registrato." />
             <InfoCard title="Creator separati" text="Bio, città, gallery e reputation restano nella tabella creators." />
             <InfoCard title="Base solida" text="Struttura pronta per area admin e flussi distinti." />
           </div>
