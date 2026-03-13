@@ -2,8 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 
 type CreatorRow = {
   id: string;
-  slug: string | null;
   display_name: string | null;
+  slug: string | null;
   city: string | null;
   bio: string | null;
   avatar_url: string | null;
@@ -28,7 +28,6 @@ type RankingItem = {
   displayName: string;
   city: string | null;
   imageUrl: string | null;
-  slug: string | null;
   score: number;
   averageRating: string;
   reviewsCount: number;
@@ -233,8 +232,8 @@ export async function getLumeRankingData(): Promise<RankingData> {
         return {
           id: creator.id,
           displayName: creator.display_name || "Profilo senza nome",
-          slug: creator.slug || null,
           city: creator.city || null,
+          slug: creator.slug || null,
           imageUrl,
           score,
           averageRating: reviewsCount > 0 ? `${averageRating}/5` : "N/D",

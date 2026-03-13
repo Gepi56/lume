@@ -1,14 +1,13 @@
-import { getCreatorPublicHref } from "@/lib/creators/public";
 "use client";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { MapPin, Star } from "lucide-react";
 import { BadgePill } from "@/components/ui/BadgePill";
+import { getCreatorPublicPath } from "@/lib/creators/public";
 
 export type CreatorCardModel = {
   id: string;
-  slug?: string | null;
   name: string;
   age: number;
   city: string;
@@ -19,13 +18,14 @@ export type CreatorCardModel = {
   rankLabel?: string;
   imageUrl?: string;
   badges: Array<"verified" | "premium" | "elite" | "rising">;
+  slug?: string;
 };
 
 export default function CreatorCard({ model }: { model: CreatorCardModel }) {
   const elite = model.badges.includes("elite");
 
   return (
-    <Link href={getCreatorPublicHref({ id: model.id, slug: model.slug ?? null })} className="group block">
+    <Link href={getCreatorPublicPath({ slug: (model as { slug?: string }).slug, id: model.id })} className="group block">
       <motion.div
         whileHover={{ y: -4 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}

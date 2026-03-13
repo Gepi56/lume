@@ -1,5 +1,6 @@
 export type Creator = {
   id: string;
+  slug?: string;
   name: string;
   age: number;
   city: string;
@@ -16,6 +17,7 @@ export type Creator = {
 export const DEMO_CREATORS: Creator[] = [
   {
     id: "1",
+    slug: "sofia",
     name: "Sofia",
     age: 28,
     city: "Milano",
@@ -34,6 +36,7 @@ export const DEMO_CREATORS: Creator[] = [
   },
   {
     id: "2",
+    slug: "aurora",
     name: "Aurora",
     age: 31,
     city: "Roma",

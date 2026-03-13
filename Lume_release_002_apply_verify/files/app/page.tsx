@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import ProfilesGrid from "@/components/explore/ProfilesGrid";
-import { getCreatorPublicHref } from "@/lib/creators/public";
+import { motion } from "framer-motion";
+import { getCreatorPublicPath } from "@/lib/creators/public";
 
 type Creator = {
   id: string;
-  slug: string | null;
   display_name: string | null;
+  slug: string | null;
   city: string | null;
   age: number | null;
   avatar_url: string | null;
@@ -89,7 +90,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-2 gap-4">
             {first ? (
               <Link
-                href={getCreatorPublicHref(first)}
+                href={getCreatorPublicPath({ slug: first.slug, id: first.id })}
                 className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
               >
                 <div className="relative aspect-[4/5] bg-slate-100">
@@ -123,7 +124,7 @@ export default async function HomePage() {
 
             {second ? (
               <Link
-                href={getCreatorPublicHref(second)}
+                href={getCreatorPublicPath({ slug: second.slug, id: second.id })}
                 className="group mt-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
               >
                 <div className="relative aspect-[4/5] bg-slate-100">

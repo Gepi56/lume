@@ -1,5 +1,5 @@
-import { getCreatorPublicHref } from "@/lib/creators/public";
 import Link from "next/link";
+import { getCreatorPublicPath } from "@/lib/creators/public";
 import { getLumeRankingData } from "@/lib/server/lume-ranking";
 
 export default async function RankingPage() {
@@ -133,7 +133,7 @@ export default async function RankingPage() {
                       </span>
 
                       <Link
-                        href={getCreatorPublicHref({ id: item.id, slug: item.slug })}
+                        href={getCreatorPublicPath({ slug: item.slug, id: item.id })}
                         className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-white/10 hover:text-white"
                       >
                         Apri profilo

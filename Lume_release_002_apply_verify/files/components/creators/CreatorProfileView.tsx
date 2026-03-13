@@ -1,30 +1,18 @@
 import Link from "next/link";
+import ProfileGallery from "@/components/profile/ProfileGallery";
+import {
+  getCreatorPublicPath,
+  getVisibleCreatorField,
+  normalizeCreatorGallery,
+  type CreatorImageRow,
+  type CreatorPublicRecord,
+} from "@/lib/creators/public";
+import type { ReviewRow } from "@/lib/server/creators-public";
 
-type ReviewRow = {
-  id: string;
-  rating: number | null;
-  comment: string | null;
-  verified: boolean | null;
-  created_at: string | null;
-};
-
-type CreatorViewModel = {
-  id: string;
-  display_name: string | null;
-  age: number | null;
-  city: string | null;
-  bio: string | null;
-  tags: string[] | null;
-  avatar_url: string | null;
-  gallery_urls?: string[] | null;
-  tier: string | null;
-  is_verified: boolean | null;
-};
-
-function formatDate(iso: string | null) {
-  if (!iso) return "";
+function formatDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("it-IT");
+    const d = new Date(iso);
+    return d.toLocaleDateString("it-IT");
   } catch {
     return "";
   }
@@ -47,56 +35,57 @@ function StarRow({ value }: { value: number }) {
 export default function CreatorProfileView({
   creator,
   reviews,
+  creatorImages,
 }: {
-  creator: CreatorViewModel;
+  creator: CreatorPublicRecord;
   reviews: ReviewRow[];
+  creatorImages?: CreatorImageRow[];
 }) {
-  const tags = Array.isArray(creator.tags) ? creator.tags : [];
-  const galleryUrls = Array.isArray(creator.gallery_urls) ? creator.gallery_urls.filter(Boolean) : [];
-  const images = [creator.avatar_url || "", ...galleryUrls].filter(Boolean);
-  const reviewsCount = reviews.length;
+  const tags: string[] = Array.isArray(creator.tags) ? creator.tags : [];
+  const isVerified = !!creator.is_verified;
+  const tier = (creator.tier as string | null) ?? null;
+  const isElite = tier === "elite";
+
+  const visibleCity = getVisibleCreatorField(creator.city, creator.show_city, true);
+  const visibleAge = getVisibleCreatorField(creator.age, creator.show_age, true);
+  const visibleBio = getVisibleCreatorField(creator.bio, creator.show_bio, true);
+
+  const images = normalizeCreatorGallery(creator, creatorImages);
+  const safeReviews = reviews ?? [];
+  const reviewsCount = safeReviews.length;
   const avg =
     reviewsCount > 0
-      ? reviews.reduce((acc, r) => acc + (r.rating ?? 0), 0) / reviewsCount
+      ? safeReviews.reduce((acc, r) => acc + (r.rating ?? 0), 0) / reviewsCount
       : null;
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 items-start">
         <div className="relative">
-          <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-100 shadow-sm">
-            <div className="aspect-[4/5] w-full">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={images[0] || creator.avatar_url || ""}
-                alt={creator.display_name || "Creator"}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </div>
+          <ProfileGallery images={images} name={creator.display_name || "Profilo"} />
 
           <div className="absolute top-4 left-4 flex gap-2">
-            {creator.is_verified ? (
+            {isVerified && (
               <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-sm text-emerald-700">
                 <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
                 Verificata
               </span>
-            ) : null}
-            {creator.tier === "elite" ? (
+            )}
+            {isElite && (
               <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-sm text-amber-800">
                 👑 Elite
               </span>
-            ) : null}
+            )}
           </div>
         </div>
 
         <div>
           <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
             {creator.display_name}
-            {creator.age ? `, ${creator.age}` : ""}
+            {typeof visibleAge === "number" ? `, ${visibleAge}` : ""}
           </h1>
 
-          <div className="mt-2 text-slate-600">{creator.city}</div>
+          {visibleCity ? <div className="mt-2 text-slate-600">{visibleCity}</div> : null}
 
           <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/40 px-4 py-3">
             <div className="flex items-center justify-between gap-4">
@@ -113,21 +102,27 @@ export default function CreatorProfileView({
                   )}
                 </div>
               </div>
+
               {avg ? <StarRow value={avg} /> : null}
             </div>
           </div>
 
-          <div className="mt-7">
-            <div className="text-lg font-semibold text-slate-900">Chi sono</div>
-            <p className="mt-2 text-slate-700 leading-relaxed">{creator.bio || "—"}</p>
-          </div>
+          {visibleBio ? (
+            <div className="mt-7">
+              <div className="text-lg font-semibold text-slate-900">Chi sono</div>
+              <p className="mt-2 text-slate-700 leading-relaxed">{visibleBio}</p>
+            </div>
+          ) : null}
 
           <div className="mt-6">
             <div className="text-lg font-semibold text-slate-900">Interessi</div>
             <div className="mt-3 flex flex-wrap gap-2">
               {tags.length ? (
-                tags.map((t) => (
-                  <span key={t} className="rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-sm text-slate-700">
+                tags.map((t: string) => (
+                  <span
+                    key={t}
+                    className="rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-sm text-slate-700"
+                  >
                     {t}
                   </span>
                 ))
@@ -144,6 +139,7 @@ export default function CreatorProfileView({
             >
               Chatta (demo)
             </Link>
+
             <div className="mt-2 text-xs text-slate-500">
               Demo UI: la chat reale la colleghiamo dopo (step successivo).
             </div>
@@ -151,16 +147,20 @@ export default function CreatorProfileView({
 
           <div className="mt-8">
             <div className="text-lg font-semibold text-slate-900">Recensioni</div>
-            {reviews.length === 0 ? (
+
+            {safeReviews.length === 0 ? (
               <div className="mt-3 text-sm text-slate-500">Nessuna recensione disponibile.</div>
             ) : (
               <div className="mt-4 space-y-3">
-                {reviews.map((r) => (
-                  <div key={r.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                {safeReviews.map((r) => (
+                  <div
+                    key={r.id}
+                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-amber-500">★</span>
-                        <span className="font-semibold text-slate-900">{r.rating ?? 0}</span>
+                        <span className="font-semibold text-slate-900">{r.rating}</span>
                         {r.verified ? (
                           <span className="ml-2 text-xs rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-emerald-700">
                             verificata
@@ -169,6 +169,7 @@ export default function CreatorProfileView({
                       </div>
                       <div className="text-xs text-slate-500">{formatDate(r.created_at)}</div>
                     </div>
+
                     {r.comment ? (
                       <div className="mt-2 text-sm text-slate-700">{r.comment}</div>
                     ) : (
@@ -181,9 +182,12 @@ export default function CreatorProfileView({
           </div>
 
           <div className="mt-8">
-            <Link href="/creators" className="text-sm underline text-slate-600">
+            <Link href="/explore" className="text-sm underline text-slate-600">
               ← Torna ai profili
             </Link>
+            <div className="mt-2 text-xs text-slate-400">
+              Link pubblico: {getCreatorPublicPath({ slug: creator.slug, id: creator.id })}
+            </div>
           </div>
         </div>
       </div>

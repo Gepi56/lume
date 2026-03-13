@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
-import { getCreatorPublicHref } from "@/lib/creators/public";
+import { getCreatorPublicPath } from "@/lib/creators/public";
 
 type Creator = {
   id: string;
-  slug: string | null;
   display_name: string | null;
+  slug: string | null;
   city: string | null;
   age: number | null;
   bio: string | null;
@@ -93,7 +93,7 @@ export default async function ProfilesGrid({
           return (
             <Link
               key={c.id}
-              href={getCreatorPublicHref(c)}
+              href={getCreatorPublicPath({ slug: c.slug, id: c.id })}
               className="group rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition hover:-translate-y-1 transition-transform duration-300"
             >
               <div className="relative">
