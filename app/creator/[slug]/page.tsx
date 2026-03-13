@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import ProfileGallery from "@/components/profile/ProfileGallery";
+import { getCreatorGalleryImages } from "@/lib/server/creator-gallery";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -116,7 +117,12 @@ export default async function CreatorBySlugPage({ params }: PageProps) {
   const tier = (creator.tier as string | null) ?? null;
   const isElite = tier === "elite";
   const galleryUrls: string[] = Array.isArray(creator.gallery_urls) ? creator.gallery_urls : [];
-  const images = [creator.avatar_url || "", ...galleryUrls].filter(Boolean);
+  const images = await getCreatorGalleryImages({
+    supabase,
+    creatorId: creator.id,
+    avatarUrl: creator.avatar_url,
+    legacyGalleryUrls: galleryUrls,
+  });
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
