@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   ShieldCheck,
   MapPin,
+  Sparkle,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
@@ -348,6 +349,7 @@ export default function Header() {
             {profile ? (
               <>
                 <UserBadge profile={profile} />
+                <ActionPill href="/creator" label="Creator Studio" icon={<Sparkle className="h-4 w-4" />} />
                 <ActionPill href="/dashboard" label="Dashboard" icon={<LayoutDashboard className="h-4 w-4" />} />
                 <LogoutPill onClick={handleLogout} />
               </>

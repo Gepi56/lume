@@ -145,9 +145,9 @@ export default async function CreatorBySlugPage({ params }: PageProps) {
         <div>
           <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">
             {creator.display_name}
-            {creator.age ? `, ${creator.age}` : ""}
+            {creator.show_age !== false && creator.age ? `, ${creator.age}` : ""}
           </h1>
-          <div className="mt-2 text-slate-600">{creator.city}</div>
+          <div className="mt-2 text-slate-600">{creator.show_city !== false ? (creator.city || "") : ""}</div>
           <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/40 px-4 py-3">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -165,7 +165,7 @@ export default async function CreatorBySlugPage({ params }: PageProps) {
           </div>
           <div className="mt-7">
             <div className="text-lg font-semibold text-slate-900">Chi sono</div>
-            <p className="mt-2 text-slate-700 leading-relaxed">{creator.bio || "—"}</p>
+            <p className="mt-2 text-slate-700 leading-relaxed">{creator.show_bio !== false ? (creator.bio || "—") : "Bio non visibile pubblicamente."}</p>
           </div>
           <div className="mt-6">
             <div className="text-lg font-semibold text-slate-900">Interessi</div>

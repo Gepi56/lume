@@ -262,6 +262,7 @@ export async function getLumeRankingData(): Promise<RankingData> {
         id: item.id,
         rank: index + 1,
         displayName: item.displayName,
+        slug: item.slug,
         city: item.city,
         imageUrl: item.imageUrl,
         score: item.score,
