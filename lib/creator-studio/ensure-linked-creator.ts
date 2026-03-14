@@ -20,11 +20,12 @@ type CreatorRow = {
 };
 
 const CREATOR_SELECT = "id, auth_user_id, email, display_name, slug, avatar_url, city, age, bio, tags, tier, is_verified, is_active, show_city, show_age, show_bio";
+const DEFAULT_CREATOR_TIER = "free";
 
 function slugify(value: string) {
   return value
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
@@ -142,7 +143,7 @@ export async function ensureLinkedCreator(
     age: null,
     bio: seed.bio,
     tags: [],
-    tier: "standard",
+    tier: DEFAULT_CREATOR_TIER,
     is_verified: false,
     is_active: false,
     show_city: true,
