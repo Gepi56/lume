@@ -225,23 +225,32 @@ function LogoutPill({ onClick }: { onClick: () => void }) {
   );
 }
 
+function AuthActionsSkeleton() {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="h-11 w-44 animate-pulse rounded-full border border-slate-200 bg-slate-100" />
+      <div className="h-11 w-36 animate-pulse rounded-full border border-slate-200 bg-slate-100" />
+      <div className="h-11 w-32 animate-pulse rounded-full border border-slate-200 bg-slate-100" />
+    </div>
+  );
+}
+
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [profile, setProfile] = useState<HeaderProfile | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
 
-  async function hydrateProfile() {
-    const { data } = await supabase.auth.getUser();
-    const user = data.user;
-
+  async function hydrateProfileFromUser(user: { email?: string | null; user_metadata?: Record<string, unknown> } | null) {
     if (!user?.email) {
       setProfile(null);
+      setAuthResolved(true);
       return;
     }
 
     const fallbackName =
-      (user.user_metadata?.display_name as string | undefined)?.trim() ||
+      (typeof user.user_metadata?.display_name === "string" ? user.user_metadata.display_name.trim() : "") ||
       user.email.split("@")[0] ||
       "Utente Lume";
 
@@ -278,29 +287,33 @@ export default function Header() {
       showCity,
       badgeLabel,
     });
+    setAuthResolved(true);
   }
 
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getUser().then(async ({ data }) => {
+    async function bootstrap() {
+      setAuthResolved(false);
+
+      const { data: sessionData } = await supabase.auth.getSession();
       if (!mounted) return;
-      if (!data.user) {
-        setProfile(null);
+
+      if (sessionData.session?.user) {
+        await hydrateProfileFromUser(sessionData.session.user);
         return;
       }
-      await hydrateProfile();
-    });
+
+      const { data: userData } = await supabase.auth.getUser();
+      if (!mounted) return;
+      await hydrateProfileFromUser(userData.user ?? null);
+    }
+
+    void bootstrap();
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
-
-      if (!session?.user) {
-        setProfile(null);
-        return;
-      }
-
-      await hydrateProfile();
+      await hydrateProfileFromUser(session?.user ?? null);
     });
 
     return () => {
@@ -312,6 +325,7 @@ export default function Header() {
   async function handleLogout() {
     await supabase.auth.signOut();
     setProfile(null);
+    setAuthResolved(true);
     router.push("/");
     router.refresh();
   }
@@ -346,7 +360,9 @@ export default function Header() {
           </nav>
 
           <div className="flex flex-wrap items-center gap-2">
-            {profile ? (
+            {!authResolved ? (
+              <AuthActionsSkeleton />
+            ) : profile ? (
               <>
                 <UserBadge profile={profile} />
                 <ActionPill href="/creator" label="Creator Studio" icon={<Sparkle className="h-4 w-4" />} />

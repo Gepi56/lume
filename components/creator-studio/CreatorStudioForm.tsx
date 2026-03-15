@@ -92,7 +92,7 @@ export default function CreatorStudioForm() {
         if (result.created) {
           setStatus({
             type: "ok",
-            message: "È stato creato automaticamente un profilo creator privato di base. Ora puoi completarlo qui e attivarlo in seguito.",
+            message: "È stato creato automaticamente un profilo creator privato di base. Ora puoi completarlo qui e pubblicarlo più avanti.",
           });
         }
       }
@@ -181,6 +181,9 @@ export default function CreatorStudioForm() {
     );
   }
 
+  const isPublicRouteReady = Boolean(creator.slug && creator.is_active);
+  const publicHref = creator.slug ? `/creator/${creator.slug}` : `/profile/${creator.id}`;
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -197,7 +200,7 @@ export default function CreatorStudioForm() {
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <div><span className="font-semibold text-slate-900">Slug:</span> {creator.slug ?? "—"}</div>
-            <div className="mt-1"><span className="font-semibold text-slate-900">Tier:</span> {creator.tier ?? "standard"}</div>
+            <div className="mt-1"><span className="font-semibold text-slate-900">Tier:</span> {creator.tier ?? "free"}</div>
             <div className="mt-1"><span className="font-semibold text-slate-900">Stato pubblico:</span> {creator.is_active ? "attiva" : "bozza privata"}</div>
           </div>
         </div>
@@ -282,7 +285,7 @@ export default function CreatorStudioForm() {
               <div className="mt-3">Email creator: {creator.email ?? "—"}</div>
               <div className="mt-1 break-all">auth_user_id: {creator.auth_user_id ?? "—"}</div>
               <div className="mt-4 text-xs text-slate-500">
-                Se non esisteva nessun record creator collegato, da questa release viene creata automaticamente una bozza privata.
+                Se non esisteva nessun record creator collegato, viene creata automaticamente una bozza privata.
               </div>
             </div>
 
@@ -303,12 +306,26 @@ export default function CreatorStudioForm() {
                 </div>
               ) : null}
 
-              <p className="mt-4 text-center text-xs text-slate-500">
-                Il profilo pubblico si apre solo quando il record creator è attivo e ha uno slug valido.
-              </p>
-              <Link href={creator.slug ? `/creator/${creator.slug}` : `/profile/${creator.id}`} className="mt-2 block text-center text-sm font-semibold text-slate-700 underline underline-offset-4">
-                Apri route pubblica creator
-              </Link>
+              {isPublicRouteReady ? (
+                <>
+                  <p className="mt-4 text-center text-xs text-slate-500">
+                    Il profilo è pubblico e può essere aperto dalla route definitiva creator.
+                  </p>
+                  <Link href={publicHref} className="mt-2 block text-center text-sm font-semibold text-slate-700 underline underline-offset-4">
+                    Apri route pubblica creator
+                  </Link>
+                </>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                  <div className="font-semibold">Profilo non ancora pubblico</div>
+                  <p className="mt-2 text-amber-800">
+                    Questa creator è ancora una bozza privata. La route pubblica si apre solo quando il record viene attivato.
+                  </p>
+                  <div className="mt-3 inline-flex cursor-not-allowed items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400">
+                    Route pubblica non disponibile
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </form>

@@ -3,47 +3,51 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
-import { ensureLinkedCreator } from "@/lib/creator-studio/ensure-linked-creator";
 
 export default function CreatorEntryRedirect() {
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-  const [message, setMessage] = useState("Verifica collegamento creator in corso...");
+  const [message, setMessage] = useState("Verifica sessione creator in corso...");
 
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData.user;
+      setMessage("Controllo sessione in corso...");
 
-      if (!user?.id) {
-        if (!cancelled) router.replace("/login?next=/creator/studio");
+      const { data: sessionData } = await supabase.auth.getSession();
+      const sessionUser = sessionData.session?.user;
+
+      if (sessionUser?.id) {
+        if (!cancelled) router.replace("/creator/studio");
         return;
       }
 
-      setMessage("Controllo o creazione profilo creator...");
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
 
-      const result = await ensureLinkedCreator(supabase, user);
+      if (user?.id) {
+        if (!cancelled) router.replace("/creator/studio");
+        return;
+      }
 
       if (!cancelled) {
-        if (result.creator?.id) {
-          router.replace("/creator/studio");
-          return;
-        }
-
-        if (result.error) {
-          setMessage(`Impossibile completare il collegamento creator: ${result.error}`);
-          return;
-        }
-
-        router.replace("/creators");
+        setMessage("Sessione non trovata. Reindirizzamento al login...");
+        router.replace("/login?next=/creator/studio");
       }
     }
 
+    const timeout = window.setTimeout(() => {
+      if (!cancelled) {
+        setMessage("Reindirizzamento più lento del previsto. Sto ritentando il controllo sessione...");
+      }
+    }, 1500);
+
     void run();
+
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
     };
   }, [router, supabase]);
 
