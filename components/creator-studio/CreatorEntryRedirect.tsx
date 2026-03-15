@@ -4,6 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 
+function withTimeout<T>(promise: Promise<T>, ms: number, fallbackValue: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => window.setTimeout(() => resolve(fallbackValue), ms)),
+  ]);
+}
+
 export default function CreatorEntryRedirect() {
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
@@ -15,25 +22,28 @@ export default function CreatorEntryRedirect() {
     async function run() {
       setMessage("Controllo sessione in corso...");
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const sessionUser = sessionData.session?.user;
+      try {
+        const userResult = await withTimeout(
+          supabase.auth.getUser(),
+          2500,
+          { data: { user: null }, error: { message: "auth timeout" } as { message: string } | null },
+        );
 
-      if (sessionUser?.id) {
-        if (!cancelled) router.replace("/creator/studio");
-        return;
-      }
+        const user = userResult.data.user;
+        if (user?.id) {
+          if (!cancelled) router.replace("/creator/studio");
+          return;
+        }
 
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-
-      if (user?.id) {
-        if (!cancelled) router.replace("/creator/studio");
-        return;
-      }
-
-      if (!cancelled) {
-        setMessage("Sessione non trovata. Reindirizzamento al login...");
-        router.replace("/login?next=/creator/studio");
+        if (!cancelled) {
+          setMessage("Sessione non trovata. Reindirizzamento al login...");
+          router.replace("/login?next=/creator/studio");
+        }
+      } catch {
+        if (!cancelled) {
+          setMessage("Impossibile verificare la sessione. Reindirizzamento al login...");
+          router.replace("/login?next=/creator/studio");
+        }
       }
     }
 

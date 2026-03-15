@@ -61,6 +61,13 @@ function maskEmail(email: string) {
   return `${name.slice(0, 3)}***@${domain}`;
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, fallbackValue: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => window.setTimeout(() => resolve(fallbackValue), ms)),
+  ]);
+}
+
 function NavPill({ item, active }: { item: NavItem; active: boolean }) {
   const elite = item.tone === "elite";
 
@@ -261,13 +268,18 @@ export default function Header() {
     const badgeLabel = "Cliente";
 
     try {
-      const { data: profileRows } = await supabase
-        .from("profiles")
-        .select("display_name, avatar_url, city, show_city")
-        .eq("email", user.email)
-        .limit(1);
+      const profileResult = await withTimeout(
+        supabase
+          .from("profiles")
+          .select("display_name, avatar_url, city, show_city")
+          .eq("email", user.email)
+          .limit(1),
+        2500,
+        { data: null, error: { message: "profiles timeout" } as { message: string } | null },
+      );
 
-      const profileRow = Array.isArray(profileRows) ? profileRows[0] : null;
+      const profileRows = Array.isArray(profileResult.data) ? profileResult.data : [];
+      const profileRow = profileRows[0] ?? null;
 
       if (profileRow) {
         displayName = profileRow.display_name || fallbackName;
@@ -296,17 +308,20 @@ export default function Header() {
     async function bootstrap() {
       setAuthResolved(false);
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!mounted) return;
+      try {
+        const userResult = await withTimeout(
+          supabase.auth.getUser(),
+          2500,
+          { data: { user: null }, error: { message: "auth timeout" } as { message: string } | null },
+        );
 
-      if (sessionData.session?.user) {
-        await hydrateProfileFromUser(sessionData.session.user);
-        return;
+        if (!mounted) return;
+        await hydrateProfileFromUser(userResult.data.user ?? null);
+      } catch {
+        if (!mounted) return;
+        setProfile(null);
+        setAuthResolved(true);
       }
-
-      const { data: userData } = await supabase.auth.getUser();
-      if (!mounted) return;
-      await hydrateProfileFromUser(userData.user ?? null);
     }
 
     void bootstrap();

@@ -281,10 +281,13 @@ export default function CreatorStudioForm() {
             </div>
 
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-              <div className="font-semibold text-slate-900">Collegamento account</div>
-              <div className="mt-3">Email creator: {creator.email ?? "—"}</div>
-              <div className="mt-1 break-all">auth_user_id: {creator.auth_user_id ?? "—"}</div>
+              <div className="font-semibold text-slate-900">Account di gestione</div>
+              <div className="mt-3">Email login: {creator.email ?? "—"}</div>
+              <div className="mt-1 break-all">ID account (auth_user_id): {creator.auth_user_id ?? "—"}</div>
               <div className="mt-4 text-xs text-slate-500">
+                Questo box mostra l'account che gestisce il profilo creator. Non e' un dato pubblico visibile nella scheda della creator.
+              </div>
+              <div className="mt-2 text-xs text-slate-500">
                 Se non esisteva nessun record creator collegato, viene creata automaticamente una bozza privata.
               </div>
             </div>
