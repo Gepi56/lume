@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 type GalleryImage = {
   id: string;
@@ -16,8 +16,19 @@ type Props = {
   initialImages: GalleryImage[];
 };
 
+function getBrowserSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anon) {
+    throw new Error("Configurazione Supabase client mancante.");
+  }
+
+  return createSupabaseClient(url, anon);
+}
+
 export default function CreatorGalleryManager({ creatorId, initialImages }: Props) {
-  const supabase = createClient();
+  const supabase = getBrowserSupabase();
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [images, setImages] = useState<GalleryImage[]>(initialImages);

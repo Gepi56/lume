@@ -8,17 +8,20 @@ export type CreatorGalleryImage = {
 
 type CreatorLike = {
   id: string;
-  avatar_url?: string | null;
-  gallery_urls?: string[] | null;
+  avatarUrl?: string | null;
+  galleryUrls?: string[] | null;
+};
+
+type GetCreatorGalleryImagesArgs = {
+  supabase: any;
+  creatorId: string;
+  avatarUrl?: string | null;
+  galleryUrls?: string[] | null;
 };
 
 export function buildFallbackGallery(creator: CreatorLike): CreatorGalleryImage[] {
-  const urls = Array.isArray(creator.gallery_urls) ? creator.gallery_urls : [];
-  const list = urls.length
-    ? urls
-    : creator.avatar_url
-      ? [creator.avatar_url]
-      : [];
+  const urls = Array.isArray(creator.galleryUrls) ? creator.galleryUrls : [];
+  const list = urls.length ? urls : creator.avatarUrl ? [creator.avatarUrl] : [];
 
   return list.map((url, index) => ({
     id: `fallback-${index}`,
@@ -27,4 +30,33 @@ export function buildFallbackGallery(creator: CreatorLike): CreatorGalleryImage[
     is_primary: index === 0,
     is_visible: true,
   }));
+}
+
+export async function getCreatorGalleryImages({
+  supabase,
+  creatorId,
+  avatarUrl,
+  galleryUrls,
+}: GetCreatorGalleryImagesArgs): Promise<CreatorGalleryImage[]> {
+  try {
+    const { data, error } = await supabase
+      .from("creator_images")
+      .select("id,image_url,sort_order,is_primary,is_visible")
+      .eq("creator_id", creatorId)
+      .eq("is_visible", true)
+      .order("is_primary", { ascending: false })
+      .order("sort_order", { ascending: true });
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data as CreatorGalleryImage[];
+    }
+  } catch {
+    // fallback sotto
+  }
+
+  return buildFallbackGallery({
+    id: creatorId,
+    avatarUrl,
+    galleryUrls,
+  });
 }
