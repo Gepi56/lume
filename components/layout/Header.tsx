@@ -61,13 +61,6 @@ function maskEmail(email: string) {
   return `${name.slice(0, 3)}***@${domain}`;
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number, fallbackValue: T): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((resolve) => window.setTimeout(() => resolve(fallbackValue), ms)),
-  ]);
-}
-
 function NavPill({ item, active }: { item: NavItem; active: boolean }) {
   const elite = item.tone === "elite";
 
@@ -196,15 +189,7 @@ function UserBadge({ profile }: { profile: HeaderProfile }) {
   );
 }
 
-function ActionPill({
-  href,
-  label,
-  icon,
-}: {
-  href: string;
-  label: string;
-  icon: ReactNode;
-}) {
+function ActionPill({ href, label, icon }: { href: string; label: string; icon: ReactNode }) {
   return (
     <Link href={href}>
       <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3.5 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-white">
@@ -232,14 +217,15 @@ function LogoutPill({ onClick }: { onClick: () => void }) {
   );
 }
 
-function AuthActionsSkeleton() {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="h-11 w-44 animate-pulse rounded-full border border-slate-200 bg-slate-100" />
-      <div className="h-11 w-36 animate-pulse rounded-full border border-slate-200 bg-slate-100" />
-      <div className="h-11 w-32 animate-pulse rounded-full border border-slate-200 bg-slate-100" />
-    </div>
-  );
+async function findCreatorByUserId(supabase: ReturnType<typeof getSupabaseBrowserClient>, userId: string) {
+  const { data, error } = await supabase
+    .from("creators")
+    .select("id")
+    .eq("auth_user_id", userId)
+    .limit(1);
+
+  if (error) return false;
+  return Array.isArray(data) && data.length > 0;
 }
 
 export default function Header() {
@@ -248,10 +234,12 @@ export default function Header() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [profile, setProfile] = useState<HeaderProfile | null>(null);
   const [authResolved, setAuthResolved] = useState(false);
+  const [hasCreator, setHasCreator] = useState(false);
 
-  async function hydrateProfileFromUser(user: { email?: string | null; user_metadata?: Record<string, unknown> } | null) {
-    if (!user?.email) {
+  async function hydrateFromUser(user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null) {
+    if (!user?.email || !user.id) {
       setProfile(null);
+      setHasCreator(false);
       setAuthResolved(true);
       return;
     }
@@ -265,30 +253,28 @@ export default function Header() {
     let avatarUrl: string | null = null;
     let city: string | null = null;
     let showCity = false;
-    const badgeLabel = "Cliente";
 
     try {
-      const profileResult = await withTimeout(
+      const [{ data: profileData }, creatorLinked] = await Promise.all([
         supabase
           .from("profiles")
           .select("display_name, avatar_url, city, show_city")
           .eq("email", user.email)
           .limit(1),
-        2500,
-        { data: null, error: { message: "profiles timeout" } as { message: string } | null },
-      );
+        findCreatorByUserId(supabase, user.id),
+      ]);
 
-      const profileRows = Array.isArray(profileResult.data) ? profileResult.data : [];
-      const profileRow = profileRows[0] ?? null;
-
-      if (profileRow) {
-        displayName = profileRow.display_name || fallbackName;
-        avatarUrl = profileRow.avatar_url || null;
-        city = profileRow.city || null;
-        showCity = profileRow.show_city === true;
+      const row = Array.isArray(profileData) ? profileData[0] : null;
+      if (row) {
+        displayName = row.display_name || fallbackName;
+        avatarUrl = row.avatar_url || null;
+        city = row.city || null;
+        showCity = row.show_city === true;
       }
+
+      setHasCreator(creatorLinked);
     } catch {
-      // fallback auth
+      setHasCreator(false);
     }
 
     setProfile({
@@ -297,7 +283,7 @@ export default function Header() {
       avatarUrl,
       city,
       showCity,
-      badgeLabel,
+      badgeLabel: hasCreator ? "Creator" : "Cliente",
     });
     setAuthResolved(true);
   }
@@ -306,33 +292,41 @@ export default function Header() {
     let mounted = true;
 
     async function bootstrap() {
-      setAuthResolved(false);
-
       try {
-        const userResult = await withTimeout(
-          supabase.auth.getUser(),
-          2500,
-          { data: { user: null }, error: { message: "auth timeout" } as { message: string } | null },
-        );
-
+        const { data: sessionData } = await supabase.auth.getSession();
         if (!mounted) return;
-        await hydrateProfileFromUser(userResult.data.user ?? null);
+
+        if (sessionData.session?.user) {
+          await hydrateFromUser(sessionData.session.user);
+          return;
+        }
+
+        const { data: userData } = await supabase.auth.getUser();
+        if (!mounted) return;
+        await hydrateFromUser(userData.user ?? null);
       } catch {
         if (!mounted) return;
         setProfile(null);
+        setHasCreator(false);
         setAuthResolved(true);
       }
     }
+
+    const failSafe = window.setTimeout(() => {
+      if (!mounted) return;
+      setAuthResolved(true);
+    }, 1800);
 
     void bootstrap();
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
-      await hydrateProfileFromUser(session?.user ?? null);
+      await hydrateFromUser((session?.user as never) ?? null);
     });
 
     return () => {
       mounted = false;
+      window.clearTimeout(failSafe);
       listener.subscription.unsubscribe();
     };
   }, [supabase]);
@@ -340,6 +334,7 @@ export default function Header() {
   async function handleLogout() {
     await supabase.auth.signOut();
     setProfile(null);
+    setHasCreator(false);
     setAuthResolved(true);
     router.push("/");
     router.refresh();
@@ -375,20 +370,22 @@ export default function Header() {
           </nav>
 
           <div className="flex flex-wrap items-center gap-2">
-            {!authResolved ? (
-              <AuthActionsSkeleton />
-            ) : profile ? (
+            {profile ? (
               <>
-                <UserBadge profile={profile} />
-                <ActionPill href="/creator" label="Creator Studio" icon={<Sparkle className="h-4 w-4" />} />
+                <UserBadge profile={{ ...profile, badgeLabel: hasCreator ? "Creator" : "Cliente" }} />
+                {hasCreator ? (
+                  <ActionPill href="/creator/studio" label="Creator Studio" icon={<Sparkle className="h-4 w-4" />} />
+                ) : null}
                 <ActionPill href="/dashboard" label="Dashboard" icon={<LayoutDashboard className="h-4 w-4" />} />
                 <LogoutPill onClick={handleLogout} />
               </>
-            ) : (
+            ) : authResolved ? (
               <>
                 <AuthPill href="/login" label="Login" icon={<LogIn className="h-4 w-4" />} />
                 <AuthPill href="/register" label="Registrati" icon={<UserPlus className="h-4 w-4" />} tone="gold" />
               </>
+            ) : (
+              <div className="h-11 w-44 rounded-full border border-slate-200 bg-slate-50" />
             )}
           </div>
         </div>

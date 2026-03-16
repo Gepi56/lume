@@ -4,60 +4,49 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 
-function withTimeout<T>(promise: Promise<T>, ms: number, fallbackValue: T): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((resolve) => window.setTimeout(() => resolve(fallbackValue), ms)),
-  ]);
-}
-
 export default function CreatorEntryRedirect() {
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-  const [message, setMessage] = useState("Verifica sessione creator in corso...");
+  const [message, setMessage] = useState("Verifica ruolo in corso...");
 
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
-      setMessage("Controllo sessione in corso...");
-
       try {
-        const userResult = await withTimeout(
-          supabase.auth.getUser(),
-          2500,
-          { data: { user: null }, error: { message: "auth timeout" } as { message: string } | null },
-        );
+        const { data: sessionData } = await supabase.auth.getSession();
+        const user = sessionData.session?.user ?? null;
 
-        const user = userResult.data.user;
-        if (user?.id) {
-          if (!cancelled) router.replace("/creator/studio");
+        if (!user?.id) {
+          if (!cancelled) router.replace("/creators");
           return;
         }
 
+        setMessage("Controllo profilo professionista in corso...");
+
+        const { data, error } = await supabase
+          .from("creators")
+          .select("id")
+          .eq("auth_user_id", user.id)
+          .limit(1);
+
+        if (error) {
+          if (!cancelled) router.replace("/creators");
+          return;
+        }
+
+        const hasCreator = Array.isArray(data) && data.length > 0;
         if (!cancelled) {
-          setMessage("Sessione non trovata. Reindirizzamento al login...");
-          router.replace("/login?next=/creator/studio");
+          router.replace(hasCreator ? "/creator/studio" : "/creators");
         }
       } catch {
-        if (!cancelled) {
-          setMessage("Impossibile verificare la sessione. Reindirizzamento al login...");
-          router.replace("/login?next=/creator/studio");
-        }
+        if (!cancelled) router.replace("/creators");
       }
     }
 
-    const timeout = window.setTimeout(() => {
-      if (!cancelled) {
-        setMessage("Reindirizzamento più lento del previsto. Sto ritentando il controllo sessione...");
-      }
-    }, 1500);
-
     void run();
-
     return () => {
       cancelled = true;
-      window.clearTimeout(timeout);
     };
   }, [router, supabase]);
 
