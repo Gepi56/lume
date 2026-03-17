@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import CreatorGalleryManager from "@/components/creator-studio/CreatorGalleryManager";
 
@@ -34,13 +34,11 @@ type FlexibleProps = {
   record?: CreatorData | null;
   initialCreator?: CreatorData | null;
   initialData?: CreatorData | null;
-
   galleryImages?: GalleryImage[] | null;
   images?: GalleryImage[] | null;
   gallery?: GalleryImage[] | null;
   initialImages?: GalleryImage[] | null;
   initialGallery?: GalleryImage[] | null;
-
   [key: string]: any;
 };
 
@@ -86,19 +84,23 @@ function normalizeTags(tags: CreatorData["tags"]): string {
 }
 
 export default function CreatorStudioForm(props: FlexibleProps) {
-  const initialCreator = resolveCreator(props);
-  const initialGallery = resolveGallery(props);
+  const bootCreator = resolveCreator(props);
+  const bootGallery = resolveGallery(props);
 
-  const [creator, setCreator] = useState<CreatorData | null>(initialCreator);
-  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(initialGallery);
-  const [loading, setLoading] = useState(!initialCreator);
+  const [creator, setCreator] = useState<CreatorData | null>(bootCreator);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(bootGallery);
+  const [loading, setLoading] = useState(!bootCreator?.id);
   const [error, setError] = useState("");
+  const [publicHref, setPublicHref] = useState("/creators");
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadFallbackData() {
-      if (initialCreator?.id) return;
+    async function loadCreatorIfNeeded() {
+      if (bootCreator?.id) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
@@ -106,22 +108,22 @@ export default function CreatorStudioForm(props: FlexibleProps) {
 
         const supabase = getBrowserSupabase();
 
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
 
-        if (userError) throw userError;
+        const user = authData?.user;
         if (!user) throw new Error("Utente non autenticato.");
 
-        const { data: creatorRow, error: creatorError } = await supabase
+        const { data: creatorRows, error: creatorError } = await supabase
           .from("creators")
           .select("*")
           .eq("auth_user_id", user.id)
-          .single();
+          .limit(1);
 
         if (creatorError) throw creatorError;
-        if (!creatorRow) throw new Error("Profilo creator non trovato.");
+
+        const creatorRow = Array.isArray(creatorRows) ? creatorRows[0] : null;
+        if (!creatorRow?.id) throw new Error("Profilo creator non trovato per questo account.");
 
         const { data: imageRows } = await supabase
           .from("creator_images")
@@ -144,11 +146,20 @@ export default function CreatorStudioForm(props: FlexibleProps) {
       }
     }
 
-    loadFallbackData();
+    loadCreatorIfNeeded();
+
     return () => {
       cancelled = true;
     };
-  }, [initialCreator]);
+  }, [bootCreator?.id]);
+
+  useEffect(() => {
+    if (creator?.slug && creator.is_active) {
+      setPublicHref(`/creator/${creator.slug}`);
+    } else {
+      setPublicHref("/creators");
+    }
+  }, [creator?.slug, creator?.is_active]);
 
   const hasCreator =
     !!creator &&
@@ -214,49 +225,28 @@ export default function CreatorStudioForm(props: FlexibleProps) {
           <div className="space-y-5">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-900">Nome pubblico</label>
-              <input
-                value={creator.display_name || ""}
-                readOnly
-                className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900"
-              />
+              <input value={creator.display_name || ""} readOnly className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900" />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-900">Città</label>
-                <input
-                  value={creator.city || ""}
-                  readOnly
-                  className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900"
-                />
+                <input value={creator.city || ""} readOnly className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900" />
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-900">Età</label>
-                <input
-                  value={creator.age ?? ""}
-                  readOnly
-                  className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900"
-                />
+                <input value={creator.age ?? ""} readOnly className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900" />
               </div>
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-900">Bio</label>
-              <textarea
-                value={creator.bio || ""}
-                readOnly
-                rows={4}
-                className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900"
-              />
+              <textarea value={creator.bio || ""} readOnly rows={4} className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900" />
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-900">Tag</label>
-              <input
-                value={normalizeTags(creator.tags)}
-                readOnly
-                className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900"
-              />
+              <input value={normalizeTags(creator.tags)} readOnly className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900" />
             </div>
           </div>
 
@@ -277,6 +267,13 @@ export default function CreatorStudioForm(props: FlexibleProps) {
                 Queste informazioni di collegamento restano interne e non sono visibili pubblicamente nella scheda creator.
               </p>
             </div>
+
+            <a
+              href={publicHref}
+              className="inline-flex w-full items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-900"
+            >
+              {creator?.is_active && creator?.slug ? "Apri profilo creator pubblico" : "Torna ai creator pubblici"}
+            </a>
           </div>
         </div>
       </div>
