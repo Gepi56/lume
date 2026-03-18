@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Lightbox from "@/components/Lightbox";
 
 type GalleryValue =
   | string
@@ -25,11 +26,7 @@ function normalizeImages(images: GalleryValue[] = []): string[] {
     if (typeof item === "string") {
       value = item;
     } else if (item && typeof item === "object") {
-      value =
-        item.image_url ??
-        item.url ??
-        item.src ??
-        "";
+      value = item.image_url ?? item.url ?? item.src ?? "";
     }
 
     const cleaned = value.trim();
@@ -43,6 +40,7 @@ function normalizeImages(images: GalleryValue[] = []): string[] {
 export default function ProfileGallery({ images = [] }: Props) {
   const cleaned = useMemo(() => normalizeImages(images), [images]);
   const [selected, setSelected] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (!cleaned.length) return null;
 
@@ -51,13 +49,17 @@ export default function ProfileGallery({ images = [] }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-[28px] bg-slate-100">
+      <button
+        type="button"
+        onClick={() => setLightboxIndex(safeIndex)}
+        className="block w-full overflow-hidden rounded-[28px] bg-slate-100"
+      >
         <img
           src={current}
           alt=""
           className="aspect-[4/5] w-full object-cover"
         />
-      </div>
+      </button>
 
       {cleaned.length > 1 ? (
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -65,7 +67,10 @@ export default function ProfileGallery({ images = [] }: Props) {
             <button
               key={`${src}-${index}`}
               type="button"
-              onClick={() => setSelected(index)}
+              onClick={() => {
+                setSelected(index);
+                setLightboxIndex(index);
+              }}
               className={`overflow-hidden rounded-2xl border ${
                 safeIndex === index ? "border-slate-900" : "border-slate-200"
               }`}
@@ -78,6 +83,24 @@ export default function ProfileGallery({ images = [] }: Props) {
             </button>
           ))}
         </div>
+      ) : null}
+
+      {lightboxIndex !== null ? (
+        <Lightbox
+          images={cleaned}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNext={() =>
+            setLightboxIndex((prev) =>
+              prev !== null ? (prev + 1) % cleaned.length : 0
+            )
+          }
+          onPrev={() =>
+            setLightboxIndex((prev) =>
+              prev !== null ? (prev - 1 + cleaned.length) % cleaned.length : 0
+            )
+          }
+        />
       ) : null}
     </div>
   );
